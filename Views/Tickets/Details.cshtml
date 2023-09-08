@@ -1,0 +1,232 @@
+﻿@model Ticket
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Ticket Details</h1>
+
+<div>
+    <div classxfont-weighteighteightgetainer-fluid">
+        <div class="row gy-2">
+            <div class="col-md-12 col">
+                <div class="row col-cols-2 mt-5 bg-secondary">
+                    <div class="card col m-1 p-2">
+                        <div class="card-body">
+                            <h5>@Model.Title</h5>
+                            <p>@Model.Description</p>
+                            <div class="progress-container progress-info m-b-25">
+                                <span class="progress-badge" style="font-size:small">Project Status</span>
+                                <div class="progress">
+                                    @{
+                                        double projectLengthInHours = Model.Project!.EndDate.Subtract(Model.Project!.StartDate).TotalHours;
+                                        double hoursRemaining = Model.Project!.EndDate.Subtract(DateTime.Now).TotalHours;
+                                        double hoursPast = projectLengthInHours - hoursRemaining;
+                                        double percentProgress = Math.Ceiling(hoursPast / projectLengthInHours * 10);
+                                        @if (percentProgress > 100) percentProgress = 100;
+                                        <div class="progress-bar" role="progressbar" aria-valuenow="@percentProgress"
+                                             aria-valuemin="0" aria-valuemax="100" style="width:@percentProgress%;">
+                                            <span class="progress-value">@percentProgress%</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card col m-1 p-2">
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li><strong>Date Entered:</strong> <span class="">  @Model.Created</</span></li>
+                                <li><strong>Deadline:</strong> <span class="">  @Model.Project!.EndDate</</span></li>
+                                @if (Model.TicketType != null)
+                                {
+                                    <li><strong>Type:</strong> <span class="">  @Model.TicketType.Name</span></li>
+                                }
+                                @if (Model.TicketPriority != null)
+                                {
+                                    <li><strong>Priority:</strong> <span class="">  @Model.TicketPriority.Name</span></li>
+                                }
+                                @if (Model.TicketStatus != null)
+                                {
+                                    <li><strong>Status:</strong> <span class="">  @Model.TicketStatus.Name</span></li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8 col col-cols-2 mt-5 ">
+                <div class="col">
+                    <div class="bg-secondary">
+                        <div class="card m-1 p-2">
+                            <div class="card-header">
+                                <h2>Comments</h2>
+                            </div>
+                            <div class="card-body" style="overflow-y:auto;height:600px;">
+                                @*Form and Logic for authorized users to add comments*@
+                                @if (User.Identity!.IsAuthenticated)
+                                {
+                                    <form asp-action="AddTicketComment" asp-route-id="@Model.Id">
+                                        <textarea class="editor form-control" name="comment"></textarea>
+                                        <input type="submit" value="Add Comment"
+                                               class="btn btn-primary mt-3" />
+                                    </form>
+                                }
+                                <hr />
+                                <h6>Comments</h6>
+                                <ul class="right_chat list-unstyled mb-0">
+                                    @foreach (TicketComment comment in Model.Comments.OrderByDescending(c => c.Created))
+                                    {
+                                        <li>
+                                            <strong>@comment.User!.FullName</strong>
+                                            <span> on @comment.Created.ToString("MMM dd yyyy hh:mm tt")</span>
+                                            @Html.Raw(comment.Comment)
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                            <div class="card-footer">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="bg-secondary">
+                        <div class="card m-1 p-2">
+                            <div class="card-header">
+                                <h2>Attachments</h2>
+                            </div>
+                            <div class="card-body" style="overflow-y:auto;height:300px;">
+
+                                @* Refer to the Ticket Attachments document for this section *@
+
+                                @* Ticket attachments part 1 here *@
+
+                                @* Ticket attachments part 2 here *@
+
+                            </div>
+                            <div class="card-footer">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col mt-5 ">
+                <div class="bg-dark">
+                    <div class="card m-1 p-2">
+                        <div class="card-header">
+                            <h2>History</h2>
+                            <hr />
+                        </div>
+                        <div class="card-body" style="overflow-y:auto;height:1000px;background-color:antiquewhite">
+                            @*Loop to show the history entries for the Ticket*@
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <!--CK Editor-->
+    <script src="https://cdn.ckeditor.com/ckeditor5/35.0.1/super-build/ckeditor.js"></script>
+    <script>
+        CKEDITOR.ClassicEditor.create(document.querySelector('.editor'), {
+            toolbar: {
+                items: [
+                    'findAndReplace', 'selectAll', '|',
+                    'heading', '|',
+                    'bold', 'italic', 'strikethrough', 'underline', 'code', 'subscript', 'superscript', 'removeFormat', '|',
+                    'bulletedList', 'numberedList', 'todoList', '|',
+                    'outdent', 'indent', '|',
+                    'undo', 'redo',
+                    '-',
+                    'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', 'highlight', '|',
+                    'alignment', '|',
+                    'link', 'insertImage', 'blockQuote', 'insertTable', 'mediaEmbed', 'codeBlock', 'htmlEmbed', '|',
+                    'specialCharacters', 'horizontalLine', 'pageBreak', '|',
+                ],
+                shouldNotGroupWhenFull: true
+            },
+            list: {
+                properties: {
+                    styles: true,
+                    startIndex: true,
+                    reversed: true
+                }
+            },
+            heading: {
+                options: [
+                    { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                    { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                    { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                    { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
+                    { model: 'heading4', view: 'h4', title: 'Heading 4', class: 'ck-heading_heading4' },
+                    { model: 'heading5', view: 'h5', title: 'Heading 5', class: 'ck-heading_heading5' },
+                    { model: 'heading6', view: 'h6', title: 'Heading 6', class: 'ck-heading_heading6' }
+                ]
+            },
+            fontFamily: {
+                options: [
+                    'default',
+                    'Arial, Helvetica, sans-serif',
+                    'Courier New, Courier, monospace',
+                    'Georgia, serif',
+                    'Lucida Sans Unicode, Lucida Grande, sans-serif',
+                    'Tahoma, Geneva, sans-serif',
+                    'Times New Roman, Times, serif',
+                    'Trebuchet MS, Helvetica, sans-serif',
+                    'Verdana, Geneva, sans-serif'
+                ],
+                supportAllValues: true
+            },
+            fontSize: {
+                options: [10, 12, 14, 'default', 18, 20, 22],
+                supportAllValues: true
+            },
+            htmlSupport: {
+                allow: [
+                    {
+                        name: /.*/,
+                        attributes: true,
+                        classes: true,
+                        styles: true
+                    }
+                ]
+            },
+            htmlEmbed: {
+                showPreviews: true
+            },
+            link: {
+                decorators: {
+                    addTargetToExternalLinks: true,
+                    defaultProtocol: 'https://',
+
+                }
+            },
+            removePlugins: [
+                'CKBox',
+                'CKFinder',
+                'RealTimeCollaborativeComments',
+                'RealTimeCollaborativeTrackChanges',
+                'RealTimeCollaborativeRevisionHistory',
+                'PresenceList',
+                'Comments',
+                'TrackChanges',
+                'TrackChangesData',
+                'RevisionHistory',
+                'Pagination',
+                'WProofreader',
+            ]
+        });
+    </script>
+}

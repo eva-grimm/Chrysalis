@@ -1,0 +1,62 @@
+﻿@model Project
+@inject IFileService _FileService;
+
+@{
+    ViewData["Title"] = $"Editing Project {Model.Name}";
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="ProjectPriorityId" class="control-label"></label>
+                <select asp-for="ProjectPriorityId" class="form-control" asp-items="ViewBag.ProjectPriorityId"></select>
+                <span asp-validation-for="ProjectPriorityId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Name" class="control-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Description" class="control-label"></label>
+                <input asp-for="Description" class="form-control" />
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="StartDate" class="control-label"></label>
+                <input asp-for="StartDate" class="form-control" />
+                <span asp-validation-for="StartDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="EndDate" class="control-label"></label>
+                <input asp-for="EndDate" class="form-control" />
+                <span asp-validation-for="EndDate" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="Archived" /> Archive Project?
+                </label>
+            </div>
+            <div class="form-group">
+                <label asp-for="ImageFile" class="control-label">Project Image</label>
+                <img id="projectImage" class="img-fluid border rounded-3 mb-2" style="max-height: 350px;"
+                     src="@_FileService.ConvertByteArrayToFile(Model?.ImageData!,Model?.ImageType!, DefaultImage.ProjectImage)">
+                <input asp-for="ImageFile" type="file" class="form-control mt-3 pt-2" accept=".png,.jpg,.jpeg,.gif"
+                       onchange="document.getElementById('projectImage').src = window.URL.createObjectURL(this.files[0])" />
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
