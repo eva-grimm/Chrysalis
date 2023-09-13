@@ -1,0 +1,26 @@
+﻿@using Chrysalis.Models.ViewModels
+@model AssignPMViewModel
+
+@{
+    ViewData["Title"] = "Assign Project Manager";
+}
+<div class="d-flex justify-content-center mt-5 flex-column align-items-center">
+    <h3 class="my-5">Assign Project Manager</h3>
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">@Model.ProjectName</div>
+        </div>
+        <div class="card-body">
+            <form asp-action="AssignPM" asp-controller="Projects" method="post" class="d-flex flex-column">
+                <input type="hidden" asp-for="ProjectId" />
+                <select asp-items="Model.PMList" asp-for="PMId">
+                    <option value="">Unassigned</option>
+                </select>
+                <span asp-validation-for="PMId" class="text-danger"></span>
+                <button type="submit" class="btn btn-primary my-3">Save</button>
+                @*<a asp-action="Details" asp-route-id="@Model.ProjectId" class="btn btn-secondary">Cancel</a>*@
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>

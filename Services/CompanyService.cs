@@ -19,12 +19,17 @@ namespace Chrysalis.Services
             _roleManager = roleManager;
         }
 
+        public bool CompanyExists(int companyId)
+        {
+            return (_context.Companies?.Any(e => e.Id == companyId)).GetValueOrDefault();
+        }
+
         /// <summary>
         /// Returns the Company whose ID matches companyId
         /// </summary>
         /// <param name="companyId">ID of Company to Retrieve</param>
         /// <returns>Matching Company or null if no matches</returns>
-        public async Task<Company> GetCompanyById(int? companyId)
+        public async Task<Company> GetCompanyByIdAsync(int? companyId)
         {
             Company? company = await _context.Companies
                 .Include(c => c.Projects)
@@ -44,11 +49,18 @@ namespace Chrysalis.Services
             return company ?? new Company();
         }
 
+        public async Task<BTUser> GetCompanyUserByIdAsync(string? userId)
+        {
+            if (string.IsNullOrEmpty(userId)) return new BTUser();
+
+            return await _context.Users.FirstOrDefaultAsync(u => u.Id == userId) ?? new BTUser();
+        }
+
         /// <summary>
         /// Returns all employees of the current user's company.
         /// </summary>
         /// <param name="companyId">Current User's CompanyID</param>
-        public async Task<IEnumerable<BTUser>> GetAllCompanyUsersAsync(int? companyId)
+        public async Task<List<BTUser>> GetAllCompanyUsersAsync(int? companyId)
         {
             return await _context.Users
                 .Where(bt => bt.CompanyId == companyId)
@@ -63,6 +75,17 @@ namespace Chrysalis.Services
         {
             return await _context.Projects
                 .Where(p => p.CompanyId == companyId)
+                .ToListAsync();
+        }
+        
+        /// <summary>
+        /// Returns all invites for the current user's company.
+        /// </summary>
+        /// <param name="companyId">Current User's CompanyID</param>
+        public async Task<IEnumerable<Invite>> GetAllCompanyInvitesAsync(int? companyId)
+        {
+            return await _context.Invites
+                .Where(i => i.CompanyId == companyId)
                 .ToListAsync();
         }
     }

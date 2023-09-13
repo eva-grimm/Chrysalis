@@ -14,5 +14,7 @@ namespace Chrysalis.Services.Interfaces
         public Task<IEnumerable<TicketStatus>> GetAllTicketStatuses();
         public Task<int?> GetTicketStatusIdAsync(BTTicketStatuses status);
         public Task<IEnumerable<TicketType>> GetAllTicketTypes();
+        public Task AddTicketAttachmentAsync(TicketAttachment ticketAttachment);
+        public Task<TicketAttachment?> GetTicketAttachmentByIdAsync(int ticketAttachmentId);
     }
 }

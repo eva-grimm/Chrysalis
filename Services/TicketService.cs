@@ -28,7 +28,7 @@ namespace Chrysalis.Services
         }
 
         /// <summary>
-        /// Adds provided ticket to the database.
+        /// Adds provided Ticket to the database.
         /// </summary>
         /// <param name="ticket">Ticket to be added</param>
         public async Task AddTicketAsync(Ticket? ticket)
@@ -85,6 +85,8 @@ namespace Chrysalis.Services
                     .Include(t => t.TicketStatus)
                     .Include(t => t.Comments)
                         .ThenInclude(c => c.User)
+                    .Include(t => t.Attachments)
+                        .ThenInclude(a => a.User)
                     .FirstOrDefaultAsync(t => t.Id == ticketId);
                 return ticket != null && ticket.Project!.CompanyId == companyId ? ticket : null;
             }
@@ -110,6 +112,12 @@ namespace Chrysalis.Services
                         .ThenInclude(t => t.TicketStatus)
                     .Include(p => p.Tickets)
                         .ThenInclude(t => t.TicketType)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.Comments)
+                            .ThenInclude(c => c.User)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.Attachments)
+                            .ThenInclude(c => c.User)
                     .ToListAsync();
 
                 return projects.SelectMany(p => p.Tickets);
@@ -152,6 +160,35 @@ namespace Chrysalis.Services
         public async Task<IEnumerable<TicketType>> GetAllTicketTypes()
         {
             return await _context.TicketTypes.ToListAsync();
+        }
+
+        public async Task AddTicketAttachmentAsync(TicketAttachment ticketAttachment)
+        {
+            try
+            {
+                await _context.AddAsync(ticketAttachment);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public async Task<TicketAttachment?> GetTicketAttachmentByIdAsync(int ticketAttachmentId)
+        {
+            try
+            {
+                TicketAttachment? ticketAttachment = await _context.TicketAttachments
+                    .Include(t => t.User)
+                    .FirstOrDefaultAsync(t => t.Id == ticketAttachmentId);
+                return ticketAttachment ?? new TicketAttachment();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
     }
 }

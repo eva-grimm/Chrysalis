@@ -1,5 +1,4 @@
-﻿@using Chrysalis.Services.Interfaces
-@model IEnumerable<Project>
+﻿@model IEnumerable<Project>
 @inject IFileService _FileService
 
 @{
@@ -66,7 +65,8 @@
                 @Html.DisplayFor(modelItem => item.Archived)
             </td>
             <td>
-                <img src="@_FileService.ConvertByteArrayToFile(item.ImageData,item.ImageType, DefaultImage.ProjectImage)" /> 
+                <img src="@_FileService.ConvertByteArrayToFile(item.ImageData,item.ImageType, DefaultImage.ProjectImage)" 
+                    style="width: 100px;"/> 
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.Company.Name)
@@ -75,10 +75,11 @@
                 @Html.DisplayFor(modelItem => item.ProjectPriority.Name)
             </td>
             <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a><br>
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a><br>
+                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a><br> |
+                <a asp-action="Details" asp-route-id="@item.Id">Details</a><br> |
+                <!--TO-DO: if PM assigned, then show "Get PM" instead-->
+                <a asp-action="AssignPM" asp-route-projectId="@item.Id">Assign PM</a><br> |
                 <a asp-action="Members" asp-route-id="@item.Id">Members</a><br>
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
             </td>
         </tr>
 }

@@ -1,9 +1,11 @@
 using Chrysalis.Data;
+using Chrysalis.Enums;
 using Chrysalis.Extensions;
 using Chrysalis.Models;
 using Chrysalis.Services;
 using Chrysalis.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,9 +27,31 @@ builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<IFileService, FileService>();
-builder.Services.AddScoped<IBTRolesService, BTRolesService>();
+builder.Services.AddScoped<IRolesService, RolesService>();
+
+// custom role policies
+builder.Services.AddAuthorization(options =>
+{
+    // AdPm Policy - Requires Admin or ProjectManager role
+    options.AddPolicy(nameof(BTPolicies.AdPm), policy =>
+        policy.RequireRole(nameof(BTRoles.Admin), 
+            nameof(BTRoles.ProjectManager)));
+    // AdPmDev Policy - Requires Admin, ProjectManager, or Developer role
+    options.AddPolicy(nameof(BTPolicies.AdPmDev), policy =>
+        policy.RequireRole(nameof(BTRoles.Admin),
+            nameof(BTRoles.ProjectManager),
+            nameof(BTRoles.Developer)));
+    // NoDemo Policy - All roles except DemoUser
+    options.AddPolicy(nameof(BTPolicies.NoDemo), policy =>
+        policy.RequireRole(nameof(BTRoles.Admin),
+            nameof(BTRoles.ProjectManager),
+            nameof(BTRoles.Developer),
+            nameof(BTRoles.Submitter)));
+});
 
 builder.Services.AddMvc();
+
+builder.Services.Configure<KestrelServerOptions>(options => options.Limits.MaxRequestBodySize = 1024 * 1024 * 100);
 
 var app = builder.Build();
 

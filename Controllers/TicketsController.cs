@@ -8,38 +8,39 @@ using Chrysalis.Models;
 using Chrysalis.Services.Interfaces;
 using Chrysalis.Enums;
 using Chrysalis.Extensions;
+using Chrysalis.Services;
 
 namespace Chrysalis.Controllers
 {
     [Authorize]
-    public class TicketsController : Controller
+    public class TicketsController : BaseController
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<BTUser> _userManager;
         private readonly ICompanyService _companyService;
         private readonly ITicketService _ticketService;
-        private readonly IBTRolesService _roleService;
+        private readonly IRolesService _roleService;
+        private readonly IFileService _fileService;
 
         public TicketsController(ApplicationDbContext context,
             UserManager<BTUser> userManager,
             ICompanyService companyService,
             ITicketService ticketService,
-            IBTRolesService roleService)
+            IRolesService roleService,
+            IFileService fileService)
         {
             _context = context;
             _userManager = userManager;
             _companyService = companyService;
             _ticketService = ticketService;
             _roleService = roleService;
+            _fileService = fileService;
         }
 
         // GET: Tickets
         public async Task<IActionResult> Index()
         {
-            BTUser? user = await _userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
-
-            Company? company = await _companyService.GetCompanyById(user.CompanyId);
+            Company? company = await _companyService.GetCompanyByIdAsync(_companyId);
 
             IEnumerable<Ticket> tickets = company.Projects
                 .SelectMany(p => p.Tickets);
@@ -48,29 +49,32 @@ namespace Chrysalis.Controllers
         }
 
         // GET: Tickets/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int? id, string? statusMessage = null)
         {
             if (id == null) return NotFound();
+            ViewData["StatusMessage"] = statusMessage;
 
             Ticket? ticket = await _ticketService
-                .GetSingleCompanyTicketAsync(id, User.Identity!.GetCompanyId());
+                .GetSingleCompanyTicketAsync(id, _companyId);
             if (ticket == null) return NotFound();
 
             return View(ticket);
         }
 
         // GET: Tickets/Create
+        [Authorize(Policy = nameof(BTPolicies.NoDemo))]
         public async Task<IActionResult> Create()
         {
-            ViewData["CompanyProjects"] = new SelectList(await _companyService.GetAllCompanyProjectsAsync(User.Identity!.GetCompanyId()), "Id", "Name");
+            ViewData["CompanyProjects"] = new SelectList(await _companyService.GetAllCompanyProjectsAsync(_companyId), "Id", "Name");
             ViewData["TicketTypes"] = new SelectList(await _ticketService.GetAllTicketTypes(), "Id", "Name");
             ViewData["TicketPriorities"] = new SelectList(await _ticketService.GetAllTicketPriorities(), "Id", "Name");
-            ViewData["DeveloperUsers"] = new SelectList(await _roleService.GetUsersInRoleAsync(BTRoles.Developer.ToString(), User.Identity!.GetCompanyId()), "Id", "FullName");
+            ViewData["DeveloperUsers"] = new SelectList(await _roleService.GetUsersInRoleAsync(BTRoles.Developer.ToString(), _companyId), "Id", "FullName");
             return View();
         }
 
         // POST: Tickets/Create
         [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Policy = nameof(BTPolicies.NoDemo))]
         public async Task<IActionResult> Create([Bind("ProjectId,TicketTypeId,TicketPriorityId,DeveloperUserId,Title,Description")] Ticket ticket)
         {
             ModelState.Remove("SubmitterUserId");
@@ -108,36 +112,38 @@ namespace Chrysalis.Controllers
             }
             else
             {
-                ViewData["CompanyProjects"] = new SelectList(await _companyService.GetAllCompanyProjectsAsync(User.Identity!.GetCompanyId()), "Id", "Name");
+                ViewData["CompanyProjects"] = new SelectList(await _companyService.GetAllCompanyProjectsAsync(_companyId), "Id", "Name");
                 ViewData["TicketTypes"] = new SelectList(await _ticketService.GetAllTicketTypes(), "Id", "Name");
                 ViewData["TicketPriorities"] = new SelectList(await _ticketService.GetAllTicketPriorities(), "Id", "Name");
-                ViewData["DeveloperUsers"] = new SelectList(await _roleService.GetUsersInRoleAsync(BTRoles.Developer.ToString(), User.Identity!.GetCompanyId()), "Id", "FullName");
+                ViewData["DeveloperUsers"] = new SelectList(await _roleService.GetUsersInRoleAsync(BTRoles.Developer.ToString(), _companyId), "Id", "FullName");
                 return View(ticket);
             }
         }
 
         // GET: Tickets/Edit/5
+        [Authorize(Policy = nameof(BTPolicies.AdPmDev))]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
 
-            Ticket? ticket = await _ticketService.GetSingleCompanyTicketAsync(id, User.Identity!.GetCompanyId());
+            Ticket? ticket = await _ticketService.GetSingleCompanyTicketAsync(id, _companyId);
             if (ticket == null) return NotFound();
 
             ViewData["TicketTypes"] = new SelectList(await _ticketService.GetAllTicketTypes(), "Id", "Name");
             ViewData["TicketStatuses"] = new SelectList(await _ticketService.GetAllTicketStatuses(), "Id", "Name");
             ViewData["TicketPriorities"] = new SelectList(await _ticketService.GetAllTicketPriorities(), "Id", "Name");
-            ViewData["DeveloperUsers"] = new SelectList(await _roleService.GetUsersInRoleAsync(BTRoles.Developer.ToString(), User.Identity!.GetCompanyId()), "Id", "FullName");
+            ViewData["DeveloperUsers"] = new SelectList(await _roleService.GetUsersInRoleAsync(BTRoles.Developer.ToString(), _companyId), "Id", "FullName");
             return View(ticket);
         }
 
         // POST: Tickets/Edit/5
         [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Policy = nameof(BTPolicies.AdPmDev))]
         public async Task<IActionResult> Edit(int id)
         {
             // TO-DO: security check
             // who should be allowed to edit the ticket?
-            Ticket? ticket = await _ticketService.GetSingleCompanyTicketAsync(id, User.Identity!.GetCompanyId());
+            Ticket? ticket = await _ticketService.GetSingleCompanyTicketAsync(id, _companyId);
             if (ticket == null) return NotFound();
 
             bool validUpdate = await TryUpdateModelAsync(
@@ -171,55 +177,13 @@ namespace Chrysalis.Controllers
                 ViewData["TicketTypes"] = new SelectList(await _ticketService.GetAllTicketTypes(), "Id", "Name");
                 ViewData["TicketStatuses"] = new SelectList(await _ticketService.GetAllTicketStatuses(), "Id", "Name");
                 ViewData["TicketPriorities"] = new SelectList(await _ticketService.GetAllTicketPriorities(), "Id", "Name");
-                ViewData["DeveloperUsers"] = new SelectList(await _roleService.GetUsersInRoleAsync(BTRoles.Developer.ToString(), User.Identity!.GetCompanyId()), "Id", "FullName");
+                ViewData["DeveloperUsers"] = new SelectList(await _roleService.GetUsersInRoleAsync(BTRoles.Developer.ToString(), _companyId), "Id", "FullName");
                 return View(ticket);
             }
         }
 
-        // GET: Tickets/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null || _context.Tickets == null)
-            {
-                return NotFound();
-            }
-
-            var ticket = await _context.Tickets
-                .Include(t => t.DeveloperUser)
-                .Include(t => t.Project)
-                .Include(t => t.SubmitterUser)
-                .Include(t => t.TicketPriority)
-                .Include(t => t.TicketStatus)
-                .Include(t => t.TicketType)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (ticket == null)
-            {
-                return NotFound();
-            }
-
-            return View(ticket);
-        }
-
-        // POST: Tickets/Delete/5
-        [HttpPost, ActionName("Delete"), ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            if (_context.Tickets == null)
-            {
-                return Problem("Entity set 'ApplicationDbContext.Tickets'  is null.");
-            }
-            var ticket = await _context.Tickets.FindAsync(id);
-            if (ticket != null)
-            {
-                _context.Tickets.Remove(ticket);
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
         // POST: AddTicketComment
+        [HttpPost, Authorize(Policy = nameof(BTPolicies.AdPmDev))]
         public async Task<IActionResult> AddTicketComment(int? id, string? comment)
         {
             if (id == null) return NotFound();
@@ -227,7 +191,7 @@ namespace Chrysalis.Controllers
             // TO-DO: security check
             // who should be allowed to edit the ticket?
 
-            Ticket? ticket = await _ticketService.GetSingleCompanyTicketAsync(id, User.Identity!.GetCompanyId());
+            Ticket? ticket = await _ticketService.GetSingleCompanyTicketAsync(id, _companyId);
             if (ticket == null) return NotFound();
 
             //bool validUpdate = await TryUpdateModelAsync(ticket, string.Empty,
@@ -252,6 +216,52 @@ namespace Chrysalis.Controllers
                 else throw;
             }
             return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost,ValidateAntiForgeryToken]
+        [Authorize(Policy = nameof(BTPolicies.AdPmDev))]
+        public async Task<IActionResult> AddTicketAttachment([Bind("FormFile,Description,TicketId")] TicketAttachment ticketAttachment)
+        {
+            string statusMessage;
+
+            ModelState.Remove("UserId");
+
+            if (ModelState.IsValid && ticketAttachment.FormFile != null)
+            {
+                ticketAttachment.FileData = await _fileService.ConvertFileToByteArrayAsync(ticketAttachment.FormFile);
+                ticketAttachment.FileName = ticketAttachment.FormFile.FileName;
+                ticketAttachment.FileType = ticketAttachment.FormFile.ContentType;
+
+                ticketAttachment.Created = DateTime.Now;
+                ticketAttachment.UserId = _userManager.GetUserId(User);
+
+                await _ticketService.AddTicketAttachmentAsync(ticketAttachment);
+                statusMessage = "Success: New attachment added to Ticket.";
+            }
+            else if (!ModelState.IsValid && ticketAttachment.FormFile != null)
+            {
+                statusMessage = "Error: File too large. Max size is 1MB.";
+            }
+            else
+            {
+                statusMessage = "Error: Invalid data.";
+            }
+
+            return RedirectToAction("Details", new { id = ticketAttachment.TicketId, statusMessage });
+        }
+
+        [Authorize]
+        public async Task<IActionResult> ShowFile(int id)
+        {
+            TicketAttachment? ticketAttachment = await _ticketService.GetTicketAttachmentByIdAsync(id);
+            if (ticketAttachment == null) return NotFound();
+
+            string fileName = ticketAttachment.FileName!;
+            byte[] fileData = ticketAttachment.FileData!;
+            string ext = Path.GetExtension(fileName)!.Replace(".", "");
+
+            Response.Headers.Add("Content-Disposition", $"inline; filename={fileName}");
+            return File(fileData, $"application/{ext}");
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Chrysalis.Controllers
         // GET: TicketAttachments
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.TicketAttachments.Include(t => t.BTUser).Include(t => t.Ticket);
+            var applicationDbContext = _context.TicketAttachments.Include(t => t.User).Include(t => t.Ticket);
             return View(await applicationDbContext.ToListAsync());
         }
 
@@ -35,7 +35,7 @@ namespace Chrysalis.Controllers
             }
 
             var ticketAttachment = await _context.TicketAttachments
-                .Include(t => t.BTUser)
+                .Include(t => t.User)
                 .Include(t => t.Ticket)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (ticketAttachment == null)
@@ -49,7 +49,7 @@ namespace Chrysalis.Controllers
         // GET: TicketAttachments/Create
         public IActionResult Create()
         {
-            ViewData["BTUserId"] = new SelectList(_context.Users, "Id", "Id");
+            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id");
             ViewData["TicketId"] = new SelectList(_context.Tickets, "Id", "Description");
             return View();
         }
@@ -59,7 +59,7 @@ namespace Chrysalis.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,TicketId,BTUserId,Description,Created,FileData,FileType")] TicketAttachment ticketAttachment)
+        public async Task<IActionResult> Create([Bind("Id,TicketId,UserId,Description,Created,FileData,FileType")] TicketAttachment ticketAttachment)
         {
             if (ModelState.IsValid)
             {
@@ -67,7 +67,7 @@ namespace Chrysalis.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["BTUserId"] = new SelectList(_context.Users, "Id", "Id", ticketAttachment.BTUserId);
+            ViewData["BTUserId"] = new SelectList(_context.Users, "Id", "Id", ticketAttachment.UserId);
             ViewData["TicketId"] = new SelectList(_context.Tickets, "Id", "Description", ticketAttachment.TicketId);
             return View(ticketAttachment);
         }
@@ -85,7 +85,7 @@ namespace Chrysalis.Controllers
             {
                 return NotFound();
             }
-            ViewData["BTUserId"] = new SelectList(_context.Users, "Id", "Id", ticketAttachment.BTUserId);
+            ViewData["BTUserId"] = new SelectList(_context.Users, "Id", "Id", ticketAttachment.UserId);
             ViewData["TicketId"] = new SelectList(_context.Tickets, "Id", "Description", ticketAttachment.TicketId);
             return View(ticketAttachment);
         }
@@ -95,7 +95,7 @@ namespace Chrysalis.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,TicketId,BTUserId,Description,Created,FileData,FileType")] TicketAttachment ticketAttachment)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,TicketId,UserId,Description,Created,FileData,FileType")] TicketAttachment ticketAttachment)
         {
             if (id != ticketAttachment.Id)
             {
@@ -122,7 +122,7 @@ namespace Chrysalis.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["BTUserId"] = new SelectList(_context.Users, "Id", "Id", ticketAttachment.BTUserId);
+            ViewData["BTUserId"] = new SelectList(_context.Users, "Id", "Id", ticketAttachment.UserId);
             ViewData["TicketId"] = new SelectList(_context.Tickets, "Id", "Description", ticketAttachment.TicketId);
             return View(ticketAttachment);
         }
@@ -136,7 +136,7 @@ namespace Chrysalis.Controllers
             }
 
             var ticketAttachment = await _context.TicketAttachments
-                .Include(t => t.BTUser)
+                .Include(t => t.User)
                 .Include(t => t.Ticket)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (ticketAttachment == null)

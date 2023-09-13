@@ -1,10 +1,9 @@
 ﻿@model Ticket
+@inject IFileService _FileService
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = $"Ticket '{Model.Title}' Details";
 }
-
-<h1>Ticket Details</h1>
 
 <div>
     <div classxfont-weighteighteightgetainer-fluid">
@@ -97,12 +96,48 @@
                                 <h2>Attachments</h2>
                             </div>
                             <div class="card-body" style="overflow-y:auto;height:300px;">
-
-                                @* Refer to the Ticket Attachments document for this section *@
-
-                                @* Ticket attachments part 1 here *@
-
-                                @* Ticket attachments part 2 here *@
+                                <div class="row clearfix">
+                                    <div>
+                                        <form asp-action="AddTicketAttachment" asp-controller="Tickets" enctype="multipart/form-data" method="post">
+                                            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                                            <input type="hidden" asp-for="@Model.Id" name="TicketId">
+                                            <div class="media-body ml-3">
+                                                <label>
+                                                    Description
+                                                    <input name="Description" type="text" class="form-control" />
+                                                </label><br />
+                                                <label class="btn btn-outline-primary btn-sm">
+                                                    <input name="FormFile" type="file" class="form-control-file" />
+                                                </label>
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm md-btn-flat">Submit</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                                <hr />
+                                <h6>Attachments</h6>
+                                <div class="container">
+                                    <div class="row">
+                                        @foreach (TicketAttachment item in Model.Attachments)
+                                        {
+                                            <div class="col col-sm-2">
+                                                <a asp-action="ShowFile" asp-controller="Tickets" asp-route-Id="@item.Id">
+                                                    <div class="icon">
+                                                        <img src="@_FileService.GetFileIcon(item!.FileName!)"
+                                                             style="height:50px;width:50px" data-bs-toggle="tooltip"
+                                                             data-bs-placement="top" title="" data-bs-original-title="@item.FileName" />
+                                                    </div>
+                                                </a>
+                                                <div style="font-size:x-small">
+                                                    <div class="file-name">
+                                                        <strong>@item.Description</strong>
+                                                    </div>
+                                                    <small>Size: @_FileService.FormatFileSize(item!.FileData!.Length) </small>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
 
                             </div>
                             <div class="card-footer">
@@ -112,6 +147,24 @@
                 </div>
             </div>
             <div class="col-md-4 col mt-5 ">
+                <div class="bg-dark">
+                    <div class="card m-1 p-2">
+                        <div class="card-header">
+                            <h2>Assigned Developer</h2>
+                            <hr />
+                        </div>
+                        <div class="card-body">
+                            @if (Model!.DeveloperUser != null)
+                            {
+                                <img src="@_FileService.ConvertByteArrayToFile(Model?.DeveloperUser?.ImageData,
+                                    Model?.DeveloperUser?.ImageType, DefaultImage.BTUserImage)"
+                                     class="img-thumbnail rounded-circle"
+                                     style="width: 50px;" />
+                                <span> @Model!.DeveloperUser.FullName</span>
+                            }
+                        </div>
+                    </div>
+                </div>
                 <div class="bg-dark">
                     <div class="card m-1 p-2">
                         <div class="card-header">
@@ -229,4 +282,26 @@
             ]
         });
     </script>
+    <!--End CK Editor-->
+    <!--Sweet Alerts-->
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let message = '@(ViewBag.StatusMessage)';
+        if (!message.includes("Error") && message != '') {
+            Swal.fire({
+                backdrop: false,
+                icon: 'success',
+                title: message,
+                showConfirmButton: true
+            });
+        } else if (message.includes("Error")) {
+            Swal.fire({
+                backdrop: false,
+                icon: 'error',
+                title: 'Oops...',
+                text: message
+            });
+        }
+    </script>
+    <!--End Sweet Alerts-->
 }

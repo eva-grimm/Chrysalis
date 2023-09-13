@@ -3,6 +3,7 @@ using Chrysalis.Models;
 using Chrysalis.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Chrysalis.Enums;
 
 namespace Chrysalis.Services
 {
@@ -10,12 +11,15 @@ namespace Chrysalis.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<BTUser> _userManager;
+        private readonly IRolesService _roleService;
 
         public ProjectService(ApplicationDbContext context,
-            UserManager<BTUser> userManager)
+            UserManager<BTUser> userManager,
+            IRolesService roleService)
         {
             _context = context;
             _userManager = userManager;
+            _roleService = roleService;
         }
 
         /// <summary>
@@ -86,6 +90,13 @@ namespace Chrysalis.Services
                     .Where(p => p.CompanyId == companyId)
                     .Include(p => p.Company)
                     .Include(p => p.Members)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.Comments)
+                            .ThenInclude(c => c.User)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.Attachments)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.History)
                     .Include(p => p.ProjectPriority)
                     .FirstOrDefaultAsync(p => p.Id == projectId);
                 return project;
@@ -95,25 +106,33 @@ namespace Chrysalis.Services
                 throw;
             }
         }
-
-        /// <summary>
-        /// Gets all tickets associated with the project matching the
-        /// provided projectId.
-        /// </summary>
-        /// <param name="projectId">ID of the Project to retrieve Tickets from</param>
-        /// <returns>Empty Enumerable if no matching Project found</returns>
-        public async Task<IEnumerable<Ticket>> GetProjectTickets(int? projectId)
+        
+        public async Task<Project?> GetProjectAsNoTrackingAsync(int? projectId, int? companyId)
         {
-            if (projectId == null) return Enumerable.Empty<Ticket>();
+            if (projectId == null) return new Project();
 
-            return await _context.Tickets
-                .Where(t => t.Project!.Id == projectId)
-                .Include(t => t.TicketPriority)
-                .Include(t => t.TicketType)
-                .Include(t => t.TicketStatus)
-                .Include(t => t.DeveloperUser)
-                .Include(t => t.SubmitterUser)
-                .ToListAsync();
+            try
+            {
+                Project? project = await _context.Projects
+                    .Where(p => p.CompanyId == companyId)
+                    .Include(p => p.Company)
+                    .Include(p => p.Members)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.Comments)
+                            .ThenInclude(c => c.User)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.Attachments)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.History)
+                    .Include(p => p.ProjectPriority)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Id == projectId);
+                return project;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         public async Task<IEnumerable<BTUser>> GetCompanyMembersNotOnProject(int? projectId, int? companyId)
@@ -161,6 +180,138 @@ namespace Chrysalis.Services
         public async Task<IEnumerable<ProjectPriority>> GetAllProjectPrioritiesAsync()
         {
             return await _context.ProjectPriorities.ToListAsync();
+        }
+
+        public async Task<BTUser?> GetProjectManagerAsync(int? projectId)
+        {
+            try
+            {
+                Project? project = await _context.Projects
+                    .Include(p => p.Members)
+                    .FirstOrDefaultAsync(p => p.Id == projectId);
+
+                if (project != null)
+                {
+                    foreach (BTUser member in project.Members)
+                    {
+                        if (await _roleService.IsUserInRoleAsync(member, nameof(BTRoles.ProjectManager)))
+                        {
+                            return member;
+                        }
+                    }
+                }
+
+                return new BTUser();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> AddProjectManagerAsync(string? userId, int? projectId)
+        {
+            try
+            {
+                if (userId == null || projectId == null) return false;
+                BTUser? currentPM = await GetProjectManagerAsync(projectId);
+                BTUser? selectedPM = await _context.Users.FindAsync(userId);
+
+                if (currentPM != null) await RemoveProjectManagerAsync(projectId);
+
+                try
+                {
+                    return await AddMemberToProjectAsync(selectedPM!, projectId);
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> AddMemberToProjectAsync(BTUser? member, int? projectId)
+        {
+            try
+            {
+                if (member == null || projectId == null) return false;
+                Project? project = await _context.Projects
+                    .Include(p => p.Members)
+                    .FirstOrDefaultAsync(p => p.Id == projectId);
+                if (project == null) return false;
+
+                bool IsOnProject = project.Members.Any(m => m.Id == member.Id);
+
+                if (!IsOnProject)
+                {
+                    project.Members.Add(member);
+                    await _context.SaveChangesAsync();
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> RemoveProjectManagerAsync(int? projectId)
+        {
+            try
+            {
+                if (projectId == null) return false;
+                Project? project = await _context.Projects
+                    .Include(p => p.Members)
+                    .FirstOrDefaultAsync(p => p.Id == projectId);
+                if (project == null) return false;
+
+                foreach (BTUser member in project.Members)
+                {
+                    if (await _roleService.IsUserInRoleAsync(member, nameof(BTRoles.ProjectManager)))
+                    {
+                        return await RemoveMemberFromProjectAsync(member, projectId);
+                    }
+                }
+
+                return false;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> RemoveMemberFromProjectAsync(BTUser? member, int? projectId)
+        {
+            try
+            {
+                if (member == null || projectId == null) return false;
+                Project? project = await _context.Projects
+                    .Include(p => p.Members)
+                    .FirstOrDefaultAsync(p => p.Id == projectId);
+                if (project == null) return false;
+
+                bool IsOnProject = project.Members.Any(m => m.Id == member.Id);
+
+                if (IsOnProject)
+                {
+                    project.Members.Remove(member);
+                    await _context.SaveChangesAsync();
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
     }
 }

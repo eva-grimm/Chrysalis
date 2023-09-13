@@ -416,10 +416,6 @@ namespace Chrysalis.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("BTUserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("Created")
                         .HasColumnType("timestamp with time zone");
 
@@ -429,17 +425,24 @@ namespace Chrysalis.Data.Migrations
                     b.Property<byte[]>("FileData")
                         .HasColumnType("bytea");
 
+                    b.Property<string>("FileName")
+                        .HasColumnType("text");
+
                     b.Property<string>("FileType")
                         .HasColumnType("text");
 
                     b.Property<int>("TicketId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("BTUserId");
-
                     b.HasIndex("TicketId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("TicketAttachments");
                 });
@@ -863,21 +866,21 @@ namespace Chrysalis.Data.Migrations
 
             modelBuilder.Entity("Chrysalis.Models.TicketAttachment", b =>
                 {
-                    b.HasOne("Chrysalis.Models.BTUser", "BTUser")
-                        .WithMany()
-                        .HasForeignKey("BTUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Chrysalis.Models.Ticket", "Ticket")
                         .WithMany("Attachments")
                         .HasForeignKey("TicketId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("BTUser");
+                    b.HasOne("Chrysalis.Models.BTUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Ticket");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Chrysalis.Models.TicketComment", b =>

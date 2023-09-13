@@ -5,18 +5,44 @@ namespace Chrysalis.Services
 {
     public class FileService : IFileService
     {
-        private readonly string? _defaultBTUserImage = "";
-        private readonly string? _defaultCompanyImage = "";
-        private readonly string? _defaultProjectImage = "";
+        private readonly string[] suffixes = { "Bytes", "KB", "MB", "GB", "TB", "PB" };
+        private readonly string _defaultBTUserImageSrc = "/img/DefaultUserImage.png";
+        private readonly string _defaultCompanyImageSrc = "/img/DefaultCompanyImage.png";
+        private readonly string _defaultProjectImageSrc = "/img/DefaultProjectImage.png";
 
-        public async Task<byte[]> ConvertFileToByteArrayAsync(IFormFile? file)
+        public string ConvertByteArrayToFile(byte[]? fileData, string? extension, DefaultImage fileType)
+        {
+            if (fileData == null || fileData.Length == 0)
+            {
+                switch (fileType)
+                {
+                    case DefaultImage.BTUserImage: return _defaultBTUserImageSrc;
+                    case DefaultImage.CompanyImage: return _defaultCompanyImageSrc;
+                    case DefaultImage.ProjectImage: return _defaultProjectImageSrc;
+                }
+            }
+
+            try
+            {
+                string fileBase64Data = Convert.ToBase64String(fileData!);
+                return string.Format($"data:{extension};base64,{fileBase64Data}");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<byte[]> ConvertFileToByteArrayAsync(IFormFile file)
         {
             try
             {
-                using MemoryStream memoryStream = new();
-                await file!.CopyToAsync(memoryStream);
+                MemoryStream memoryStream = new();
+                await file.CopyToAsync(memoryStream);
                 byte[] byteFile = memoryStream.ToArray();
                 memoryStream.Close();
+                memoryStream.Dispose();
+
                 return byteFile;
             }
             catch (Exception)
@@ -25,45 +51,28 @@ namespace Chrysalis.Services
             }
         }
 
-        public string? ConvertByteArrayToFile(byte[]? fileData, string? extension)
+        public string FormatFileSize(long bytes)
         {
-            try
+            int counter = 0;
+            decimal fileSize = bytes;
+            while (Math.Round(fileSize / 1024) >= 1)
             {
-                // TO-DO: Rework Handling Null Data
-                if (fileData == null || fileData.Length == 0) return string.Empty;
-
-                string? fileBase64Data = Convert.ToBase64String(fileData!);
-                fileBase64Data = string.Format($"data:{extension};base64,{fileBase64Data}");
-                return fileBase64Data;
+                fileSize /= bytes;
+                counter++;
             }
-            catch (Exception)
-            {
-                throw;
-            }
+            return string.Format("{0:n1}{1}", fileSize, suffixes[counter]);
         }
 
-        public string? ConvertByteArrayToFile(byte[]? fileData, string? extension, DefaultImage defaultImage)
+        public string GetFileIcon(string? file)
         {
-            try
-            {
-                if (fileData == null || fileData.Length == 0) 
-                {
-                    switch (defaultImage)
-                    {
-                        case DefaultImage.BTUserImage: return _defaultBTUserImage;
-                        case DefaultImage.CompanyImage: return _defaultCompanyImage;
-                        case DefaultImage.ProjectImage: return _defaultProjectImage;
-                    }
-                }
+            string fileImage = "default";
 
-                string? fileBase64Data = Convert.ToBase64String(fileData!);
-                fileBase64Data = string.Format($"data:{extension};base64,{fileBase64Data}");
-                return fileBase64Data;
-            }
-            catch (Exception)
+            if (!string.IsNullOrWhiteSpace(file))
             {
-                throw;
+                fileImage = Path.GetExtension(file).Replace(".", "");
+                return $"/img/filetype/{fileImage}.png";
             }
+            return fileImage;
         }
     }
 }

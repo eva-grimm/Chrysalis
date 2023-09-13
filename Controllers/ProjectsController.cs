@@ -7,35 +7,43 @@ using Chrysalis.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Chrysalis.Extensions;
+using Chrysalis.Enums;
+using Chrysalis.Models.ViewModels;
 
 namespace Chrysalis.Controllers
 {
     [Authorize]
-    public class ProjectsController : Controller
+    public class ProjectsController : BaseController
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<BTUser> _userManager;
         private readonly IProjectService _projectService;
         private readonly ICompanyService _companyService;
         private readonly IFileService _fileService;
+        private readonly ITicketService _ticketService;
+        private readonly IRolesService _roleService;
 
         public ProjectsController(ApplicationDbContext context,
             UserManager<BTUser> userManager,
             IProjectService projectService,
             ICompanyService companyService,
-            IFileService fileService)
+            IFileService fileService,
+            ITicketService ticketService,
+            IRolesService roleService)
         {
             _context = context;
             _userManager = userManager;
             _projectService = projectService;
             _companyService = companyService;
             _fileService = fileService;
+            _ticketService = ticketService;
+            _roleService = roleService;
         }
 
         // GET: Projects
         public async Task<IActionResult> Index()
         {
-            Company? company = await _companyService.GetCompanyById(User.Identity!.GetCompanyId());
+            Company? company = await _companyService.GetCompanyByIdAsync(_companyId);
 
             return View(company.Projects);
         }
@@ -46,40 +54,40 @@ namespace Chrysalis.Controllers
             if (id == null) return NotFound();
 
             Project? project = await _projectService
-                .GetSingleCompanyProjectAsync(id, User.Identity!.GetCompanyId());
+                .GetSingleCompanyProjectAsync(id, _companyId);
             if (project == null) return NotFound();
 
             return View(project);
         }
 
         // GET: Projects/Members
-        [Authorize(Roles = "Admin,ProjectManager")]
+        [Authorize(Policy = nameof(BTPolicies.AdPm))]
         public async Task<IActionResult> Members(int? id)
         {
             if (id == null) return NotFound();
 
             Project? project = await _projectService
-                .GetSingleCompanyProjectAsync(id, User.Identity!.GetCompanyId());
+                .GetSingleCompanyProjectAsync(id, _companyId);
             if (project == null) return NotFound();
 
             ViewData["Members"] = new MultiSelectList(
                 project.Members, "Id", "FullName");
             ViewData["NonMembers"] = new MultiSelectList(
-                await _projectService.GetCompanyMembersNotOnProject(id, User.Identity!.GetCompanyId()),
+                await _projectService.GetCompanyMembersNotOnProject(id, _companyId),
                 "Id", "FullName");
 
             return View(project);
         }
 
         // POST: Projects/Members
-        [HttpPost,ValidateAntiForgeryToken, Authorize(Roles = "Admin,ProjectManager")]
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = nameof(BTPolicies.AdPm))]
         public async Task<IActionResult> Members(int? id, List<string> selected, List<string> removed)
         {
             if (id == null) return NotFound();
 
             Project? project = await _projectService
                 .GetSingleCompanyProjectAsync(
-                    id, User.Identity!.GetCompanyId());
+                    id, _companyId);
             if (project == null) return NotFound();
 
             bool validUpdate = await TryUpdateModelAsync(
@@ -91,12 +99,12 @@ namespace Chrysalis.Controllers
             {
                 try
                 {
-                    foreach(string memberId in selected)
+                    foreach (string memberId in selected)
                     {
                         BTUser? user = await _userManager.FindByIdAsync(memberId);
                         if (user != null) project.Members.Add(user);
                     }
-                    foreach(string memberId in removed)
+                    foreach (string memberId in removed)
                     {
                         BTUser? user = await _userManager.FindByIdAsync(memberId);
                         if (user != null) project.Members.Remove(user);
@@ -115,7 +123,7 @@ namespace Chrysalis.Controllers
                 ViewData["Members"] = new MultiSelectList(
                     project.Members, "Id", "FullName");
                 ViewData["NonMembers"] = new MultiSelectList(
-                    await _projectService.GetCompanyMembersNotOnProject(id, User.Identity!.GetCompanyId()),
+                    await _projectService.GetCompanyMembersNotOnProject(id, _companyId),
                     "Id", "FullName");
 
                 return View(project);
@@ -123,7 +131,7 @@ namespace Chrysalis.Controllers
         }
 
         // GET: Projects/Create
-        [Authorize(Roles = "Admin,ProjectManager")]
+        [Authorize(Policy = nameof(BTPolicies.AdPm))]
         public async Task<IActionResult> Create()
         {
             ViewData["ProjectPriorities"] = new SelectList(await _projectService.GetAllProjectPrioritiesAsync(), "Id", "Name");
@@ -131,7 +139,7 @@ namespace Chrysalis.Controllers
         }
 
         // POST: Projects/Create
-        [HttpPost,ValidateAntiForgeryToken, Authorize(Roles = "Admin,ProjectManager")]
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = nameof(BTPolicies.AdPm))]
         public async Task<IActionResult> Create([Bind("Name,Description,StartDate,EndDate,ProjectPriorityId,ImageFile")] Project project)
         {
             ModelState.Remove("CompanyId");
@@ -158,28 +166,27 @@ namespace Chrysalis.Controllers
         }
 
         // GET: Projects/Edit/5
-        [Authorize(Roles = "Admin,ProjectManager")]
+        [Authorize(Policy = nameof(BTPolicies.AdPm))]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
 
             Project? project = await _projectService
-                .GetSingleCompanyProjectAsync(id, User.Identity!.GetCompanyId());
+                .GetSingleCompanyProjectAsync(id, _companyId);
             if (project == null) return NotFound();
 
             ViewData["ProjectPriorityId"] = new SelectList(
-                await _projectService.GetAllProjectPrioritiesAsync(), 
+                await _projectService.GetAllProjectPrioritiesAsync(),
                     "Id", "Name", project.ProjectPriorityId);
             return View(project);
         }
 
         // POST: Projects/Edit/5
-        [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin,ProjectManager")]
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = nameof(BTPolicies.AdPm))]
         public async Task<IActionResult> Edit(int id)
         {
             Project? project = await _projectService
-                .GetSingleCompanyProjectAsync(id, 
-                    User.Identity!.GetCompanyId());
+                .GetSingleCompanyProjectAsync(id, _companyId);
             if (project == null) return NotFound();
 
             // security check
@@ -201,12 +208,48 @@ namespace Chrysalis.Controllers
             {
                 try
                 {
+                    Project? originalProject = await _projectService.GetProjectAsNoTrackingAsync(
+                        id, _companyId);
+
                     if (project.ImageFile != null)
                     {
                         project.ImageData = await _fileService
                             .ConvertFileToByteArrayAsync(project.ImageFile);
                         project.ImageType = project.ImageFile.ContentType;
                     }
+
+                    // handle project being archived/unarchived
+                    if (project.Archived && !originalProject!.Archived)
+                    {
+                        foreach (Ticket? ticket in project.Tickets)
+                        {
+                            try
+                            {
+                                ticket.ArchivedByProject = true;
+                                await _ticketService.UpdateTicketAsync(ticket);
+                            }
+                            catch (Exception)
+                            {
+                                throw;
+                            }
+                        }
+                    }
+                    else if (!project.Archived && originalProject!.Archived)
+                    {
+                        foreach (Ticket? ticket in project.Tickets)
+                        {
+                            try
+                            {
+                                ticket.ArchivedByProject = false;
+                                await _ticketService.UpdateTicketAsync(ticket);
+                            }
+                            catch (Exception)
+                            {
+                                throw;
+                            }
+                        }
+                    }
+
                     await _projectService.UpdateProjectAsync(project);
                 }
                 catch (DbUpdateConcurrencyException)
@@ -218,51 +261,66 @@ namespace Chrysalis.Controllers
             }
             else
             {
-                ViewData["ProjectPriorityId"] = new SelectList(await 
-                    _projectService.GetAllProjectPrioritiesAsync(), 
+                ViewData["ProjectPriorityId"] = new SelectList(await
+                    _projectService.GetAllProjectPrioritiesAsync(),
                     "Id", "Name", project.ProjectPriorityId);
                 return View(project);
             }
         }
 
-        // GET: Projects/Delete/5
-        [Authorize(Roles = "Admin,ProjectManager")]
-        public async Task<IActionResult> Delete(int? id)
+        // GET: Projects/AssignPM/5
+        public async Task<IActionResult> AssignPM(int? projectId)
         {
-            if (id == null || _context.Projects == null)
-            {
-                return NotFound();
-            }
+            if (projectId == null) return NotFound();
+            Project? project = await _projectService.GetSingleCompanyProjectAsync(projectId, _companyId);
+            if (project == null) return NotFound();
 
-            var project = await _context.Projects
-                .Include(p => p.Company)
-                .Include(p => p.ProjectPriority)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (project == null)
-            {
-                return NotFound();
-            }
+            IEnumerable<BTUser> projectManagers = await _roleService.GetUsersInRoleAsync(nameof(BTRoles.ProjectManager), _companyId);
+            BTUser? currentPM = await _projectService.GetProjectManagerAsync(projectId);
 
-            return View(project);
+            AssignPMViewModel viewModel = new()
+            {
+                ProjectId = project.Id,
+                ProjectName = project.Name,
+                PMList = new SelectList(projectManagers, "Id", "FullName", currentPM?.Id),
+                PMId = currentPM?.Id,
+            };
+
+            return View(viewModel);
         }
 
-        // POST: Projects/Delete/5
-        [HttpPost, ActionName("Delete"), ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,ProjectManager")]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        // POST: Projects/AssignPM/5
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignPM(AssignPMViewModel viewModel)
         {
-            if (_context.Projects == null)
+            if (string.IsNullOrEmpty(viewModel.PMId))
             {
-                return Problem("Entity set 'ApplicationDbContext.Projects'  is null.");
-            }
-            var project = await _context.Projects.FindAsync(id);
-            if (project != null)
-            {
-                _context.Projects.Remove(project);
+                ModelState.AddModelError("PMId", "You must select a PM.");
+                IEnumerable<BTUser> projectManagers = await _roleService.GetUsersInRoleAsync(nameof(BTRoles.ProjectManager), _companyId);
+                BTUser? currentPM = await _projectService.GetProjectManagerAsync(viewModel.ProjectId);
+                viewModel.PMList = new SelectList(projectManagers, "Id", "FullName", currentPM?.Id);
+
+                return View(viewModel);
             }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                bool success = await _projectService.AddProjectManagerAsync(viewModel.PMId, viewModel.ProjectId);
+                if (success) return RedirectToAction(nameof(Details), new { id = viewModel.ProjectId });
+                else
+                {
+                    ModelState.AddModelError("PMId", "Error assigning the chosen PM.");
+                    IEnumerable<BTUser> projectManagers = await _roleService.GetUsersInRoleAsync(nameof(BTRoles.ProjectManager), _companyId);
+                    BTUser? currentPM = await _projectService.GetProjectManagerAsync(viewModel.ProjectId);
+                    viewModel.PMList = new SelectList(projectManagers, "Id", "FullName", currentPM?.Id);
+
+                    return View(viewModel);
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
     }
 }

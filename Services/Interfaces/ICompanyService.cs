@@ -1,12 +1,16 @@
 ﻿using Chrysalis.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Chrysalis.Services.Interfaces
 {
     public interface ICompanyService
     {
-        public Task<Company> GetCompanyById(int? id);
-        public Task<IEnumerable<BTUser>> GetAllCompanyUsersAsync(int? companyId);
+        public bool CompanyExists(int companyId);
+        public Task<Company> GetCompanyByIdAsync(int? companyId);
+        public Task<BTUser> GetCompanyUserByIdAsync(string? userId);
+        public Task<List<BTUser>> GetAllCompanyUsersAsync(int? companyId);
         public Task<IEnumerable<Project>> GetAllCompanyProjectsAsync(int? companyId);
-        //public Task<IEnumerable<BTUser>> GetDeveloperUsers(int? companyId);
+        public Task<IEnumerable<Invite>> GetAllCompanyInvitesAsync(int? companyId);
+
     }
 }

@@ -2,52 +2,126 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+
+    <link rel="icon" href="~/favicon.ico" type="image/x-icon" />
     <title>@ViewData["Title"] - Chrysalis</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <!-- Bootstrap CSS -->
+    <link id="style" href="../assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Icons CSS -->
+    <link href="../assets/plugins/web-fonts/icons.css" rel="stylesheet" />
+    <link href="../assets/plugins/web-fonts/font-awesome/font-awesome.min.css" rel="stylesheet">
+    <link href="../assets/plugins/web-fonts/plugin.css" rel="stylesheet" />
+
+    <!-- Style CSS -->
+    <link href="../assets/css/style.css" rel="stylesheet">
+
+    <!-- Select2 CSS -->
+    <link href="../assets/plugins/select2/css/select2.min.css" rel="stylesheet">
+
+    <!-- Mutipleselect CSS -->
+    <link rel="stylesheet" href="../assets/plugins/multipleselect/multiple-select.css">
+
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Chrysalis.styles.css" asp-append-version="true" />
 </head>
+
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Chrysalis</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Projects" asp-action="Index">Projects</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Tickets" asp-action="Index">Tickets</a>
-                        </li>
-                    </ul>
-                    <partial name="_LoginPartial" />
+    <div class="page">
+
+        <!-- Main Header -->
+        <div class="main-header side-header sticky">
+            <div class="main-header-left">
+                <a class="main-header-menu-icon" href="javascript:void(0)" id="mainSidebarToggle"><span></span></a>
+                <div class="hor-logo">
+                    <a class="main-logo" asp-controller="Projects" asp-action="Index">
+                        <img src="../assets/img/brand/logo.png" class="header-brand-img desktop-logo" alt="logo">
+                        <img src="../assets/img/brand/logo-light.png" class="header-brand-img desktop-logo-dark"
+                             alt="logo">
+                    </a>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+            <div class="main-header-center">
+
+            </div>
+            <div class="main-header-right">
+
+            </div>
+        </div>
+
+        <div class="container">
+            <main role="main" class="pb-3">
+                @RenderBody()
+            </main>
+        </div>
+
+        <!-- Main Footer -->
+        <div class="main-footer text-center">
+            <div class="container">
+                <div class="row row-sm">
+                    <div class="col-md-12">
+                        <span>
+                            Copyright © 2023 <a href="javascript:void(0)">Chrysalis</a>. Designed by <a href="https://cadence-eva.netlify.app/">Cadence Eva Custin</a> All rights reserved.
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2023 - Chrysalis - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Back-to-top -->
+    <a href="#top" id="back-to-top"><i class="fe fe-arrow-up"></i></a>
+
+    <!-- Jquery js-->
+    <script src="../assets/plugins/jquery/jquery.min.js"></script>
+
+    <!-- Bootstrap js-->
+    <script src="../assets/plugins/bootstrap/js/popper.min.js"></script>
+    <script src="../assets/plugins/bootstrap/js/bootstrap.min.js"></script>
+
+    <!-- Internal Chart.Bundle js-->
+    <script src="../assets/plugins/chart.js/Chart.bundle.min.js"></script>
+
+    <!-- Peity js-->
+    <script src="../assets/plugins/peity/jquery.peity.min.js"></script>
+
+    <!-- Select2 js-->
+    <script src="../assets/plugins/select2/js/select2.min.js"></script>
+    <script src="../assets/js/select2.js"></script>
+
+    <!-- Perfect-scrollbar js -->
+    <script src="../assets/plugins/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+
+    <!-- Sidemenu js -->
+    <script src="../assets/plugins/sidemenu/sidemenu.js"></script>
+
+    <!-- Sidebar js -->
+    <script src="../assets/plugins/sidebar/sidebar.js"></script>
+
+    <!-- Internal Morris js -->
+    <script src="../assets/plugins/raphael/raphael.min.js"></script>
+    <script src="../assets/plugins/morris.js/morris.min.js"></script>
+
+    <!-- Circle Progress js-->
+    <script src="../assets/js/circle-progress.min.js"></script>
+    <script src="../assets/js/chart-circle.js"></script>
+
+    <!-- Internal Dashboard js-->
+    <script src="../assets/js/index.js"></script>
+
+    <!-- Color Theme js -->
+    <script src="../assets/js/themeColors.js"></script>
+
+    <!-- Sticky js -->
+    <script src="../assets/js/sticky.js"></script>
+
+    <!-- Custom JS -->
     <script src="~/js/site.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -1,13 +1,12 @@
 ﻿@model Project
 @inject IProjectService _ProjectService
 @inject IFileService _FileService
-@inject IBTRolesService _RoleService
+@inject IRolesService _RoleService
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = $"{Model.Name} Details";
+    BTUser? projectManager = await _ProjectService.GetProjectManagerAsync(Model.Id);
 }
-
-<h1>Details</h1>
 
 <div>
     <div class="container-fluid">
@@ -70,17 +69,16 @@
                         </div>
                         <div class="body" style="overflow-y:auto;height:300px;">
                             <ul class="right_chat list-unstyled mb-0">
-                            @foreach (BTUser manager in await _RoleService
-                               .GetUsersInRoleAsync(BTRoles.ProjectManager.ToString(), Model.CompanyId))
-                            {
-                                <li>
-                                    @manager.FullName
-                                    <span>
-                                        <img src="@_FileService.ConvertByteArrayToFile(
-                                                manager.ImageData, manager.ImageType, DefaultImage.BTUserImage)" />
-                                    </span>
-                                </li>
-                            }
+                                @if (projectManager != null)
+                                {
+                                    <li>
+                                        <img src="@_FileService.ConvertByteArrayToFile(projectManager.ImageData,
+                                            projectManager.ImageType, DefaultImage.BTUserImage)"
+                                                class="img-thumbnail rounded-circle"
+                                                style="width: 50px;" />
+                                        <span> @projectManager.FullName</span>
+                                    </li>
+                                }
                             </ul>
                         </div>
                     </div>
@@ -98,11 +96,11 @@
                                 @foreach (BTUser member in Model.Members)
                                 {
                                     <li>
-                                        @member.FullName
-                                        <span>
-                                            <img src="@_FileService.ConvertByteArrayToFile(
-                                                member.ImageData, member.ImageType, DefaultImage.BTUserImage)" />
-                                        </span>
+                                        <img src="@_FileService.ConvertByteArrayToFile(member.ImageData,
+                                            member.ImageType, DefaultImage.BTUserImage)"
+                                             class="img-thumbnail rounded-circle"
+                                             style="width: 50px;" />
+                                        <span> @member.FullName</span>
                                     </li>
                                 }
                             </ul>
@@ -169,7 +167,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach (Ticket ticket in (await _ProjectService.GetProjectTickets(Model.Id))!)
+                                        @foreach (Ticket ticket in Model.Tickets)
                                         {
                                             <tr>
                                                 <td>
@@ -203,9 +201,8 @@
                                                     @Html.DisplayFor(modelItem => ticket.SubmitterUser!.FullName)
                                                 </td>
                                                 <td>
-                                                    <a asp-action="Edit" asp-route-id="@ticket.Id">Edit</a> |
-                                                    <a asp-action="Details" asp-route-id="@ticket.Id">Details</a> |
-                                                    <a asp-action="Delete" asp-route-id="@ticket.Id">Delete</a>
+                                                    <a asp-controller="Tickets" asp-action="Edit" asp-route-id="@ticket.Id">Edit</a> |
+                                                    <a asp-controller="Tickets" asp-action="Details" asp-route-id="@ticket.Id">Details</a>
                                                 </td>
                                             </tr>
                                         }
