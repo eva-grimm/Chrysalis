@@ -1,0 +1,89 @@
+﻿@model Project
+@inject IProjectService _ProjectService
+@inject IFileService _FileService
+
+@{
+    ViewBag.Title = !Model.Archived ? "Confirm Archival" : "Confirm Unarchival";
+}
+
+<h4>
+    @if (!Model.Archived)
+    {
+        <span>Are you sure you want to archive this project?</span>
+    }
+    else
+    {
+        <span>Are you sure you want to unarchive this project?</span>
+    }
+</h4>
+<div class="row">
+    <div class="col-12 col-md-6">
+        <div class="card custom-card">
+            <div class="card-body">
+                <img class="card-img-top" alt="Project Image"
+                     src="@_FileService.ConvertByteArrayToFile(Model.ImageData,Model.ImageType,DefaultImage.ProjectImage)">
+                <h5 class="card-title">@Model.Name</h5>
+                <p class="card-text">
+                    @Model.Description <br />
+                    <small>Project Status</small>
+                    <div class="progress">
+                        @{
+                            double projectLengthInHours = Model.EndDate.Subtract(Model.StartDate).TotalHours;
+                            double hoursRemaining = Model.EndDate.Subtract(DateTime.Now).TotalHours;
+                            double hoursPast = projectLengthInHours - hoursRemaining;
+                            double percentProgress = Math.Ceiling(hoursPast / projectLengthInHours * 10);
+                            @if (percentProgress > 100) percentProgress = 100;
+                            <div class="progress-bar" role="progressbar" aria-valuenow="@percentProgress"
+                                 aria-valuemin="0" aria-valuemax="100" style="width:@percentProgress%;">
+                                <span class="progress-value">@percentProgress%</span>
+                            </div>
+                        }
+                    </div>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="card custom-card">
+            <div class="card-body">
+                <h5 class="card-title">Project Details</h5>
+                <ul>
+                    @if (await _ProjectService.GetProjectManagerAsync(Model.Id) != null)
+                    {
+                        BTUser? PM = await _ProjectService.GetProjectManagerAsync(Model.Id);
+                        <li>
+                            Project Manager:
+                            <span>
+                                <img src="@_FileService.ConvertByteArrayToFile(PM!.ImageData,
+                                            PM!.ImageType, DefaultImage.BTUserImage)"
+                                     class="img-thumbnail rounded-circle"
+                                     style="width: 50px;" />
+                                <span>@PM!.FullName</span>
+                            </span>
+                        </li>
+                    }
+                    <li>
+                        Members: @Model.Members.Count()
+                    </li>
+                    <li>
+                        Active Tickets: @Model.Tickets.Where(t => t.TicketStatusId != (int)BTTicketStatuses.Resolved).Count()
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 d-flex">
+        <input type="hidden" name="projectId" value="@Model.Id" />
+        @if (!Model.Archived)
+        {
+            <a asp-action="ArchiveProject" asp-route-projectId="@Model.Id"
+               class="btn btn-primary text-decoration-none">Archive</a>
+        }
+        else
+        {
+            <a asp-action="UnarchiveProject" asp-route-projectId="@Model.Id"
+               class="btn btn-primary text-decoration-none">Unarchive</a>
+        }
+        <a asp-action="Index" class="btn btn-primary text-decoration-none ms-3">Cancel</a>
+    </div>
+</div>

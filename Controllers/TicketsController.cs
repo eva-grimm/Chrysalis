@@ -21,13 +21,15 @@ namespace Chrysalis.Controllers
         private readonly ITicketService _ticketService;
         private readonly IRolesService _roleService;
         private readonly IFileService _fileService;
+        private readonly IProjectService _projectService;
 
         public TicketsController(ApplicationDbContext context,
             UserManager<BTUser> userManager,
             ICompanyService companyService,
             ITicketService ticketService,
             IRolesService roleService,
-            IFileService fileService)
+            IFileService fileService,
+            IProjectService projectService)
         {
             _context = context;
             _userManager = userManager;
@@ -35,6 +37,7 @@ namespace Chrysalis.Controllers
             _ticketService = ticketService;
             _roleService = roleService;
             _fileService = fileService;
+            _projectService = projectService;
         }
 
         // GET: Tickets
@@ -65,7 +68,7 @@ namespace Chrysalis.Controllers
         [Authorize(Policy = nameof(BTPolicies.NoDemo))]
         public async Task<IActionResult> Create()
         {
-            ViewData["CompanyProjects"] = new SelectList(await _companyService.GetAllCompanyProjectsAsync(_companyId), "Id", "Name");
+            ViewData["CompanyProjects"] = new SelectList(await _projectService.GetCompanyProjectsAsync(_companyId), "Id", "Name");
             ViewData["TicketTypes"] = new SelectList(await _ticketService.GetAllTicketTypes(), "Id", "Name");
             ViewData["TicketPriorities"] = new SelectList(await _ticketService.GetAllTicketPriorities(), "Id", "Name");
             ViewData["DeveloperUsers"] = new SelectList(await _roleService.GetUsersInRoleAsync(BTRoles.Developer.ToString(), _companyId), "Id", "FullName");
@@ -112,7 +115,7 @@ namespace Chrysalis.Controllers
             }
             else
             {
-                ViewData["CompanyProjects"] = new SelectList(await _companyService.GetAllCompanyProjectsAsync(_companyId), "Id", "Name");
+                ViewData["CompanyProjects"] = new SelectList(await _projectService.GetCompanyProjectsAsync(_companyId), "Id", "Name");
                 ViewData["TicketTypes"] = new SelectList(await _ticketService.GetAllTicketTypes(), "Id", "Name");
                 ViewData["TicketPriorities"] = new SelectList(await _ticketService.GetAllTicketPriorities(), "Id", "Name");
                 ViewData["DeveloperUsers"] = new SelectList(await _roleService.GetUsersInRoleAsync(BTRoles.Developer.ToString(), _companyId), "Id", "FullName");

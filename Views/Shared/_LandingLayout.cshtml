@@ -1,0 +1,279 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+
+    <link rel="icon" href="~/favicon.ico" type="image/x-icon" />
+    <title>@ViewBag.Title - Chrysalis</title>
+
+    <!-- Bootstrap CSS -->
+    <link id="style" href="~/assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Icons CSS -->
+    <link href="~/assets/plugins/web-fonts/icons.css" rel="stylesheet" />
+    <link href="~/assets/plugins/web-fonts/font-awesome/font-awesome.min.css" rel="stylesheet">
+    <link href="~/assets/plugins/web-fonts/plugin.css" rel="stylesheet" />
+
+    <!-- Style CSS -->
+    <link href="~/assets/css/style.css" rel="stylesheet" asp-append-version="true" />
+
+    <!-- Select2 CSS -->
+    <link href="~/assets/plugins/select2/css/select2.min.css" rel="stylesheet" />
+
+    <!-- Mutipleselect CSS -->
+    <link rel="stylesheet" href="~/assets/plugins/multipleselect/multiple-select.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="~/Chrysalis.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+
+<body class="app sidebar-mini ltr landing-page horizontalmenu">
+    <!-- TO-DO: Loader? Wasn't working on first insert->
+
+    <!-- Main Header-->
+    <div class="main-header side-header">
+        <div class="main-container container-fluid">
+            <div class="main-header-left">
+                <a class="main-header-menu-icon" href="javascript:void(0)"
+                   id="mainSidebarToggle"><span></span></a>
+                <div class="hor-logo">
+                    <a class="main-logo" href="index.html">
+                        <img src="~/assets/img/brand/logo.png" class="header-brand-img desktop-logo"
+                             alt="logo">
+                        <img src="~/assets/img/brand/logo-light.png" class="header-brand-img desktop-logo-dark"
+                             alt="logo">
+                    </a>
+                </div>
+            </div>
+            <div class="main-header-center">
+                <div class="responsive-logo">
+                    <a href="index.html">
+                        <img src="~/assets/img/brand/logo.png" class="mobile-logo"
+                             alt="logo">
+                    </a>
+                    <a href="index.html">
+                        <img src="~/assets/img/brand/logo-light.png" class="mobile-logo-dark"
+                             alt="logo">
+                    </a>
+                </div>
+            </div>
+            <div class="main-header-right">
+                <!-- Toggle Responsive Login/Signup -->
+                <button class="navbar-toggler navresponsive-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navbarSupportedContent-4" aria-controls="navbarSupportedContent-4"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <i class="fe fe-more-vertical header-icons navbar-toggler-icon"></i>
+                </button>
+                <!-- Start Responsive Login/Signup -->
+                <div class="navbar navbar-expand-lg  nav nav-item  navbar-nav-right responsive-navbar navbar-dark  ">
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent-4">
+                        <div class="d-flex order-lg-2 ms-auto">
+                            <!-- Identity -->
+                            <div class="header-nav-right p-3">
+                                <a href="#" class="btn ripple btn-min w-sm btn-outline-primary me-2">
+                                    Register
+                                </a>
+                                <a class="btn ripple btn-min w-sm btn-primary me-2"
+                                   asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="~/home/index">
+                                    Log In
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Responsive Login/Signup -->
+            </div>
+        </div>
+    </div>
+    <!-- End Main Header-->
+
+    <!-- Start Call to Action Header -->
+    <div class="landing-top-header overflow-hidden">
+        <div class="top sticky">
+            <!--APP-SIDEBAR-->
+            <div class="app-sidebar__overlay" data-bs-toggle="sidebar"></div>
+            <div class="app-sidebar bg-transparent">
+                <div class="container">
+                    <div class="row">
+                        <div class="main-sidemenu navbar px-0">
+                            <a class="main-logo" href="index.html">
+                                <img src="../assets/img/brand/logo.png" class="header-brand-img desktop-logo"
+                                     alt="logo">
+                                <img src="../assets/img/brand/logo-light.png"
+                                     class="header-brand-img desktop-logo-dark" alt="logo">
+                            </a>
+                            <div class="slide-left disabled" id="slide-left">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24"
+                                     viewBox="0 0 24 24">
+                                    <path d="M13.293 6.293 7.586 12l5.707 5.707 1.414-1.414L10.414 12l4.293-4.293z" />
+                                </svg>
+                            </div>
+                            <ul class="side-menu">
+                                <li class="slide">
+                                    <a class="side-menu__item active" data-bs-toggle="slide" href="#home">
+                                        <span class="side-menu__label">Test</span>
+                                    </a>
+                                </li>
+                                <li class="slide">
+                                    <a class="side-menu__item" data-bs-toggle="slide" href="#Features">
+                                        <span class="side-menu__label">Features</span>
+                                    </a>
+                                </li>
+                                <li class="slide">
+                                    <a class="side-menu__item" data-bs-toggle="slide" href="#About">
+                                        <span class="side-menu__label">About</span>
+                                    </a>
+                                </li>
+                                <li class="slide">
+                                    <a class="side-menu__item" data-bs-toggle="slide" href="#faqs">
+                                        <span class="side-menu__label">Highlights</span>
+                                    </a>
+                                </li>
+                                <li class="slide">
+                                    <a class="side-menu__item" data-bs-toggle="slide" href="#Faqs">
+                                        <span class="side-menu__label">Faq's</span>
+                                    </a>
+                                </li>
+                                <li class="slide">
+                                    <a class="side-menu__item" data-bs-toggle="slide" href="#Clients">
+                                        <span class="side-menu__label">Clients</span>
+                                    </a>
+                                </li>
+                                <li class="slide">
+                                    <a class="side-menu__item" data-bs-toggle="slide" href="#Contact">
+                                        <span class="side-menu__label">Contact</span>
+                                    </a>
+                                </li>
+                            </ul>
+                            <div class="slide-right" id="slide-right">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     fill="#7b8191" width="24" height="24" viewBox="0 0 24 24">
+                                    <path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z" />
+                                </svg>
+                            </div>
+                            <div class="header-nav-right d-none d-lg-block">
+                                <a href="#" class="btn ripple btn-min w-sm btn-secondary me-2">
+                                    Register
+                                </a>
+                                <a class="btn ripple btn-min w-sm btn-info me-2"
+                                    asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="~/home/index">
+                                    Log In
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--/APP-SIDEBAR-->
+        </div>
+        <div class="demo-screen-headline main-demo main-demo-1 spacing-top overflow-hidden reveal" id="home">
+            <div class="container px-sm-0">
+                <div class="row">
+                    <div class="col-xl-6 col-lg-6 animation-zidex pos-relative">
+                        <h4 class="fw-semibold mt-7">Manage Your Business</h4>
+                        <h1 class="text-start fw-bold">We Help to Build Your Dream Project with Spruha !</h1>
+                        <h6 class="pb-3">
+                            Spruha - Now you can use this admin template to design stunning dashboards
+                            that will wow your target viewers or users to no end. To create a good and
+                            well-structured dashboard,
+                            you need to start from scratch with HTML, SCSS, CSS, and JS and with lots of coding,
+                            but by using this Spruha-Admin template.
+                        </h6>
+
+                        <a href="https://1.envato.market/RA3qN"
+                           target="_blank" class="btn ripple btn-min w-lg mb-3 me-2 btn-light">
+                            <i class="fe fe-play me-2"></i> Get Started
+                        </a>
+                        <a href="https://themeforest.net/user/spruko/portfolio"
+                           class="btn ripple btn-min w-lg btn-outline-light mb-3 me-2" target="_blank">
+                            <i class="fe fe-eye me-2"></i>Discover More
+                        </a>
+                    </div>
+                    <div class="col-xl-6 col-lg-6 my-auto">
+                        <img src="../assets/landing/images/market3.png" alt="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Call to Action Header -->
+
+    <!-- Page -->
+    <div class="page">
+        <!-- Main Content -->
+        <div class="page main-signin-wrapper">
+            @RenderBody()
+        </div>
+        <!-- End Main Content -->
+    </div>
+    <!-- End Page -->
+
+    <!-- TO-DO: Expand footer, if main content gets longer -->
+    <!-- Start Footer-->
+    <div class="demo-footer">
+        <div class="container">
+            <div class="row">
+                <div class="card mb-0">
+                    <div class="card-body p-0">
+                        <footer class="main-footer px-0 text-center">
+                            <div class="row ">
+                                <div class="col-md-12 col-sm-12">
+                                    Copyright © <span id="year"></span> <a href="javascript:void(0)">Chrysalis</a>.
+                                    Designed with by <a href="javascript:void(0)"> Cadence Eva Custin </a>. All rights reserved.
+                                </div>
+                            </div>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Footer-->
+    <!-- BACK-TO-TOP -->
+    <a href="#top" id="back-to-top"><i class="fa fa-angle-up"></i></a>
+
+    <!-- Jquery js-->
+    <script src="~/assets/plugins/jquery/jquery.min.js"></script>
+
+    <!-- Bootstrap js-->
+    <script src="~/assets/plugins/bootstrap/js/popper.min.js"></script>
+    <script src="~/assets/plugins/bootstrap/js/bootstrap.min.js"></script>
+
+    <!-- COUNTERS JS-->
+    <script src="~/assets/plugins/counters/counterup.min.js"></script>
+    <script src="~/assets/plugins/counters/waypoints.min.js"></script>
+    <script src="~/assets/plugins/counters/counters-1.js"></script>
+
+    <!-- Perfect SCROLLBAR JS-->
+    <script src="~/assets/plugins/owl-carousel/owl.carousel.js"></script>
+    <script src="~/assets/landing/lib/company-slider/slider.js"></script>
+
+    <!--- TABS JS -->
+    <script src="~/assets/plugins/tabs/jquery.multipurpose_tabcontent.js"></script>
+    <script src="~/assets/plugins/tabs/tab-content.js"></script>
+
+    <!-- Star Rating Js-->
+    <script src="~/assets/plugins/rating/jquery-rate-picker.js"></script>
+    <script src="~/assets/plugins/rating/rating-picker.js"></script>
+
+    <!-- Star Rating-1 Js-->
+    <script src="~/assets/plugins/ratings-2/jquery.star-rating.js"></script>
+    <script src="~/assets/plugins/ratings-2/star-rating.js"></script>
+
+    <!-- SIDE-MENU JS -->
+    <script src="~/assets/landing/js/sidemenu.js"></script>
+
+    <!-- Sticky js -->
+    <script src="~/assets/js/sticky.js"></script>
+
+    <!-- Spruha Custom JS -->
+    <script src="~/assets/landing/js/landing.js"></script>
+
+    <!-- Custom JS -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

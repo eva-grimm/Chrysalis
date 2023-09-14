@@ -66,17 +66,6 @@ namespace Chrysalis.Services
                 .Where(bt => bt.CompanyId == companyId)
                 .ToListAsync();
         }
-
-        /// <summary>
-        /// Returns all projects for the current user's company.
-        /// </summary>
-        /// <param name="companyId">Current User's CompanyID</param>
-        public async Task<IEnumerable<Project>> GetAllCompanyProjectsAsync(int? companyId)
-        {
-            return await _context.Projects
-                .Where(p => p.CompanyId == companyId)
-                .ToListAsync();
-        }
         
         /// <summary>
         /// Returns all invites for the current user's company.

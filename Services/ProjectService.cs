@@ -53,24 +53,28 @@ namespace Chrysalis.Services
             }
         }
 
-        /// <summary>
-        /// Updates the database with the provided project.
-        /// </summary>
-        /// <param name="project">Project to be updated</param>
-        /// <returns>#</returns>
-        public async Task UpdateProjectAsync(Project? project)
+        public async Task<bool> UpdateProjectAsync(Project? project)
         {
-            if (project == null) return;
+            if (project == null) return false;
 
             try
             {
                 _context.Update(project);
                 await _context.SaveChangesAsync();
+                return true;
             }
             catch (Exception)
             {
+                return false;
                 throw;
             }
+        }
+
+        public async Task<IEnumerable<Project>> GetCompanyProjectsAsync(int? companyId)
+        {
+            return await _context.Projects
+                                .Where(p => p.CompanyId == companyId)
+                                .ToListAsync();
         }
 
         /// <summary>
@@ -106,7 +110,7 @@ namespace Chrysalis.Services
                 throw;
             }
         }
-        
+
         public async Task<Project?> GetProjectAsNoTrackingAsync(int? projectId, int? companyId)
         {
             if (projectId == null) return new Project();
@@ -201,7 +205,7 @@ namespace Chrysalis.Services
                     }
                 }
 
-                return new BTUser();
+                return null;
             }
             catch (Exception)
             {
@@ -310,6 +314,54 @@ namespace Chrysalis.Services
             }
             catch (Exception)
             {
+                throw;
+            }
+        }
+
+        public async Task<bool> ArchiveProjectAsync(int? projectId, int? companyId)
+        {
+            Project? project = await GetSingleCompanyProjectAsync(projectId, companyId);
+            if (project == null) return false;
+
+            try
+            {
+                project.Archived = true;
+
+                foreach (Ticket ticket in project.Tickets)
+                {
+                    ticket.ArchivedByProject = true;
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+                throw;
+            }
+        }
+
+        public async Task<bool> UnarchiveProjectAsync(int? projectId, int? companyId)
+        {
+            Project? project = await GetSingleCompanyProjectAsync(projectId, companyId);
+            if (project == null) return false;
+
+            try
+            {
+                project.Archived = false;
+
+                foreach (Ticket ticket in project.Tickets)
+                {
+                    ticket.ArchivedByProject = false;
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
                 throw;
             }
         }

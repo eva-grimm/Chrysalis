@@ -50,7 +50,7 @@ namespace Chrysalis.Services
             }
         }
 
-        public async Task<IEnumerable<string>?> GetUserRolesAsync(BTUser? user)
+        public async Task<IEnumerable<string>> GetUserRolesAsync(BTUser? user)
         {
             try
             {
@@ -59,7 +59,7 @@ namespace Chrysalis.Services
                     IEnumerable<string> result = await _userMananger.GetRolesAsync(user);
                     return result;
                 }
-                return null;
+                return Enumerable.Empty<string>();
             }
             catch (Exception)
             {

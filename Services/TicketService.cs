@@ -46,21 +46,19 @@ namespace Chrysalis.Services
             }
         }
 
-        /// <summary>
-        /// Updates the database with the provided ticket.
-        /// </summary>
-        /// <param name="ticket">Ticket to be updated</param>
-        public async Task UpdateTicketAsync(Ticket? ticket)
+        public async Task<bool> UpdateTicketAsync(Ticket? ticket)
         {
-            if (ticket == null) return;
+            if (ticket == null) return false;
 
             try
             {
                 _context.Update(ticket);
                 await _context.SaveChangesAsync();
+                return true;
             }
             catch (Exception)
             {
+                return false;
                 throw;
             }
         }
@@ -128,10 +126,24 @@ namespace Chrysalis.Services
             }
         }
 
-        /// <summary>
-        /// Returns all TicketPriorities.
-        /// </summary>
-        public async Task<IEnumerable<TicketPriority>> GetAllTicketPriorities()
+		public async Task<IEnumerable<Ticket>> GetAllUserTicketsAsync(string? userId, int? companyId)
+        {
+			try
+			{
+                IEnumerable<Ticket> tickets = await GetAllCompanyTicketsAsync(companyId);
+
+				return tickets.Where(t => t.DeveloperUserId == userId);
+			}
+			catch (Exception)
+			{
+				throw;
+			}
+		}
+
+		/// <summary>
+		/// Returns all TicketPriorities.
+		/// </summary>
+		public async Task<IEnumerable<TicketPriority>> GetAllTicketPriorities()
         {
             return await _context.TicketPriorities.ToListAsync();
         }

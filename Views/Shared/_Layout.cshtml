@@ -1,123 +1,443 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity;
+@using Chrysalis.Enums
+@inject UserManager<BTUser> _UserManager
+@inject ICompanyService _CompanyService
+@inject IFileService _FileService
+
+@{
+    BTUser? currentUser = await _CompanyService.GetCompanyUserByIdAsync(_UserManager.GetUserId(User));
+}
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
 
     <link rel="icon" href="~/favicon.ico" type="image/x-icon" />
-    <title>@ViewData["Title"] - Chrysalis</title>
+    <title>@ViewBag.Title - Chrysalis</title>
 
     <!-- Bootstrap CSS -->
-    <link id="style" href="../assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link id="style" href="~/assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
 
     <!-- Icons CSS -->
-    <link href="../assets/plugins/web-fonts/icons.css" rel="stylesheet" />
-    <link href="../assets/plugins/web-fonts/font-awesome/font-awesome.min.css" rel="stylesheet">
-    <link href="../assets/plugins/web-fonts/plugin.css" rel="stylesheet" />
+    <link href="~/assets/plugins/web-fonts/icons.css" rel="stylesheet" />
+    <link href="~/assets/plugins/web-fonts/font-awesome/font-awesome.min.css" rel="stylesheet">
+    <link href="~/assets/plugins/web-fonts/plugin.css" rel="stylesheet" />
 
     <!-- Style CSS -->
-    <link href="../assets/css/style.css" rel="stylesheet">
+    <link href="~/assets/css/style.css" rel="stylesheet" asp-append-version="true" />
 
     <!-- Select2 CSS -->
-    <link href="../assets/plugins/select2/css/select2.min.css" rel="stylesheet">
+    <link href="~/assets/plugins/select2/css/select2.min.css" rel="stylesheet" />
 
     <!-- Mutipleselect CSS -->
-    <link rel="stylesheet" href="../assets/plugins/multipleselect/multiple-select.css">
+    <link rel="stylesheet" href="~/assets/plugins/multipleselect/multiple-select.css" />
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Chrysalis.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 
-<body>
-    <div class="page">
+<body class="ltr main-body leftmenu">
+    <partial name="_LogoutPartial" />
+    <!-- TO-DO: Loader? Wasn't working on first insert->
 
+    <!-- Page -->
+    <div class="page">
         <!-- Main Header -->
         <div class="main-header side-header sticky">
-            <div class="main-header-left">
-                <a class="main-header-menu-icon" href="javascript:void(0)" id="mainSidebarToggle"><span></span></a>
-                <div class="hor-logo">
-                    <a class="main-logo" asp-controller="Projects" asp-action="Index">
-                        <img src="../assets/img/brand/logo.png" class="header-brand-img desktop-logo" alt="logo">
-                        <img src="../assets/img/brand/logo-light.png" class="header-brand-img desktop-logo-dark"
-                             alt="logo">
-                    </a>
+            <div class="main-container-1 container-fluid">
+                <div class="main-header-left">
+                    <a class="main-header-menu-icon" href="javascript:void(0)" id="mainSidebarToggle"><span></span></a>
+                    <div class="hor-logo">
+                        <a class="main-logo" asp-controller="Home" asp-action="Dashboard">
+                            <img src="~/assets/img/brand/logo.png" class="header-brand-img desktop-logo" alt="logo">
+                            <img src="~/assets/img/brand/logo-light.png" class="header-brand-img desktop-logo-dark"
+                                 alt="logo">
+                        </a>
+                    </div>
+                </div>
+                <div class="main-header-center">
+                    <div class="responsive-logo">
+                        <a asp-controller="Home" asp-action="Dashboard">
+                            <img src="~/assets/img/brand/logo.png" class="mobile-logo" alt="logo">
+                        </a>
+                        <a asp-controller="Home" asp-action="Dashboard">
+                            <img src="~/assets/img/brand/logo-light.png" class="mobile-logo-dark"
+                                 alt="logo">
+                        </a>
+                    </div>
+                    <!-- Start Search Widget -->
+                    <div class="input-group">
+                        <div class="input-group-btn search-panel">
+                            <select class="form-control select2">
+                                <option label="All categories">
+                                </option>
+                                <option value="IT Projects">
+                                    IT Projects
+                                </option>
+                                <option value="Business Case">
+                                    Business Case
+                                </option>
+                                <option value="Microsoft Project">
+                                    Microsoft Project
+                                </option>
+                                <option value="Risk Management">
+                                    Risk Management
+                                </option>
+                                <option value="Team Building">
+                                    Team Building
+                                </option>
+                            </select>
+                        </div>
+                        <input type="search" class="form-control rounded-0" placeholder="Search for anything...">
+                        <button class="btn search-btn"><i class="fe fe-search"></i></button>
+                        <!-- End Search Widget -->
+                    </div>
+                </div>
+                <div class="main-header-right">
+                    <!-- Navresponsive toggle -->
+                    <button class="navbar-toggler navresponsive-toggler" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#navbarSupportedContent-4" aria-controls="navbarSupportedContent-4"
+                            aria-expanded="false" aria-label="Toggle navigation">
+                        <i class="fe fe-more-vertical header-icons navbar-toggler-icon"></i>
+                    </button>
+                    <!-- Start Navresponsive -->
+                    <div class="navbar navbar-expand-lg  nav nav-item  navbar-nav-right responsive-navbar navbar-dark  ">
+                        <div class="collapse navbar-collapse" id="navbarSupportedContent-4">
+                            <div class="d-flex order-lg-2 ms-auto">
+                                <!-- Search -->
+                                <div class="dropdown header-search">
+                                    <a class="nav-link icon header-search">
+                                        <i class="fe fe-search header-icons"></i>
+                                    </a>
+                                    <div class="dropdown-menu">
+                                        <div class="main-form-search p-2">
+                                            <div class="input-group">
+                                                <div class="input-group-btn search-panel">
+                                                    <select class="form-control select2">
+                                                        <option label="All categories">
+                                                        </option>
+                                                        <option value="IT Projects">
+                                                            IT Projects
+                                                        </option>
+                                                        <option value="Business Case">
+                                                            Business Case
+                                                        </option>
+                                                        <option value="Microsoft Project">
+                                                            Microsoft Project
+                                                        </option>
+                                                        <option value="Risk Management">
+                                                            Risk Management
+                                                        </option>
+                                                        <option value="Team Building">
+                                                            Team Building
+                                                        </option>
+                                                    </select>
+                                                </div>
+                                                <input type="search" class="form-control"
+                                                       placeholder="Search for anything...">
+                                                <button class="btn search-btn">
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                         width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                                         stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                         stroke-linejoin="round" class="feather feather-search">
+                                                        <circle cx="11" cy="11" r="8"></circle>
+                                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Search -->
+                                <!-- Theme-Layout -->
+                                <div class="dropdown d-flex main-header-theme">
+                                    <a class="nav-link icon layout-setting">
+                                        <span class="dark-layout">
+                                            <i class="fe fe-sun header-icons"></i>
+                                        </span>
+                                        <span class="light-layout">
+                                            <i class="fe fe-moon header-icons"></i>
+                                        </span>
+                                    </a>
+                                </div>
+                                <!-- Theme-Layout -->
+                                <!-- Full screen -->
+                                <div class="dropdown ">
+                                    <a class="nav-link icon full-screen-link">
+                                        <i class="fe fe-maximize fullscreen-button fullscreen header-icons"></i>
+                                        <i class="fe fe-minimize fullscreen-button exit-fullscreen header-icons"></i>
+                                    </a>
+                                </div>
+                                <!-- Full screen -->
+                                <!-- Notification -->
+                                <div class="dropdown main-header-notification">
+                                    <a class="nav-link icon" href="javascript:void(0)">
+                                        <i class="fe fe-bell header-icons"></i>
+                                        <span class="badge bg-danger nav-link-badge">4</span>
+                                    </a>
+                                    <div class="dropdown-menu">
+                                        <div class="header-navheading">
+                                            <p class="main-notification-text">
+                                                You have 1 unread notification<span class="badge bg-pill bg-primary ms-3">View all</span>
+                                            </p>
+                                        </div>
+                                        <div class="main-notification-list">
+                                            <div class="media new">
+                                                <div class="main-img-user online">
+                                                    <img alt="avatar"
+                                                         src="~/assets/img/users/5.jpg">
+                                                </div>
+                                                <div class="media-body">
+                                                    <p>
+                                                        Congratulate <strong>Olivia James</strong> for New template
+                                                        start
+                                                    </p>
+                                                    <span>Oct 15 12:32pm</span>
+                                                </div>
+                                            </div>
+                                            <div class="media">
+                                                <div class="main-img-user">
+                                                    <img alt="avatar"
+                                                         src="~/assets/img/users/2.jpg">
+                                                </div>
+                                                <div class="media-body">
+                                                    <p><strong>Joshua Gray</strong> New Message Received</p>
+                                                    <span>
+                                                        Oct 13
+                                                        02:56am
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="media">
+                                                <div class="main-img-user online">
+                                                    <img alt="avatar"
+                                                         src="~/assets/img/users/3.jpg">
+                                                </div>
+                                                <div class="media-body">
+                                                    <p>
+                                                        <strong>Elizabeth Lewis</strong> added new schedule realease
+                                                    </p><span>
+                                                        Oct
+                                                        12 10:40pm
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="dropdown-footer">
+                                            <a href="javascript:void(0)">View All Notifications</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Notification -->
+                                <!-- Profile -->
+                                <div class="dropdown main-profile-menu">
+                                    <a class="d-flex" href="javascript:void(0)">
+                                        <span class="main-img-user">
+                                            <img alt="avatar"
+                                                 src="@_FileService.ConvertByteArrayToFile(
+												currentUser?.ImageData,
+												currentUser?.ImageType,
+                                                DefaultImage.BTUserImage)">
+                                        </span>
+                                    </a>
+                                    <div class="dropdown-menu">
+                                        <div class="header-navheading">
+                                            <h6 class="main-notification-title">Sonia Taylor</h6>
+                                            <p class="main-notification-text">Web Designer</p>
+                                        </div>
+                                        <a class="dropdown-item border-top" href="profile.html">
+                                            <i class="fe fe-user"></i> My Profile
+                                        </a>
+                                        <a class="dropdown-item" href="profile.html">
+                                            <i class="fe fe-edit"></i> Edit Profile
+                                        </a>
+                                        <a class="dropdown-item" href="profile.html">
+                                            <i class="fe fe-settings"></i> Account Settings
+                                        </a>
+                                        <a class="dropdown-item" href="profile.html">
+                                            <i class="fe fe-settings"></i> Support
+                                        </a>
+                                        <a class="dropdown-item" href="profile.html">
+                                            <i class="fe fe-compass"></i> Activity
+                                        </a>
+                                        <a class="dropdown-item"
+                                           href="javascript:document.getElementById('logoutForm').submit();">
+                                            <i class="fe fe-power"></i> Log Out
+                                        </a>
+                                    </div>
+                                </div>
+                                <!-- Profile -->
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End Navresponsive -->
                 </div>
             </div>
-            <div class="main-header-center">
-
-            </div>
-            <div class="main-header-right">
-
+        </div>
+        <!-- End Main Header -->
+        <!-- Left Sidebar -->
+        <div class="sticky">
+            <div class="main-menu main-sidebar main-sidebar-sticky side-menu">
+                <div class="main-sidebar-header main-container-1 active">
+                    <div class="sidemenu-logo">
+                        <a class="main-logo" asp-controller="Home" asp-action="Dashboard">
+                            <img src="~/assets/img/brand/logo-light.png" class="header-brand-img desktop-logo" alt="logo">
+                            <img src="~/assets/img/brand/icon-light.png" class="header-brand-img icon-logo" alt="logo">
+                            <img src="~/assets/img/brand/logo.png" class="header-brand-img desktop-logo theme-logo" alt="logo">
+                            <img src="~/assets/img/brand/icon.png" class="header-brand-img icon-logo theme-logo" alt="logo">
+                        </a>
+                    </div>
+                    <div class="main-sidebar-body main-body-1">
+                        <div class="slide-left disabled" id="slide-left"><i class="fe fe-chevron-left"></i></div>
+                        <ul class="menu-nav nav">
+                            <li class="nav-header"><span class="nav-label">Dashboard</span></li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Home" asp-action="Dashboard">
+                                    <span class="shape1"></span>
+                                    <span class="shape2"></span>
+                                    <i class="ti-home sidemenu-icon menu-icon "></i>
+                                    <span class="sidemenu-label">Dashboard</span>
+                                </a>
+                            </li>
+                            <li class="nav-header"><span class="nav-label">Projects</span></li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Projects" asp-action="Index">
+                                    <span class="shape1"></span>
+                                    <span class="shape2"></span>
+                                    <i class="ti-home sidemenu-icon menu-icon "></i>
+                                    <span class="sidemenu-label">Projects</span>
+                                </a>
+                            </li>
+                            <li class="nav-header"><span class="nav-label">Tickets</span></li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Tickets" asp-action="Index">
+                                    <span class="shape1"></span>
+                                    <span class="shape2"></span>
+                                    <i class="ti-home sidemenu-icon menu-icon "></i>
+                                    <span class="sidemenu-label">Tickets</span>
+                                </a>
+                            </li>
+                            <li class="nav-header"><span class="nav-label">Company</span></li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Companies" asp-action="Index">
+                                    <span class="shape1"></span>
+                                    <span class="shape2"></span>
+                                    <i class="ti-home sidemenu-icon menu-icon "></i>
+                                    <span class="sidemenu-label">Company</span>
+                                </a>
+                            </li>
+                            <li class="nav-header"><span class="nav-label">Forms &amp; Charts</span></li>
+                            <li class="nav-item">
+                                <a class="nav-link with-sub" href="javascript:void(0)">
+                                    <span class="shape1"></span>
+                                    <span class="shape2"></span>
+                                    <i class="ti-receipt sidemenu-icon menu-icon "></i>
+                                    <span class="sidemenu-label">Forms</span>
+                                    <span class="badge bg-info side-badge">7</span>
+                                </a>
+                                <ul class="nav-sub">
+                                    <li class="side-menu-label1"><a href="javascript:void(0)">Forms</a></li>
+                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-elements.html">Form Elements</a></li>
+                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-advanced.html">Advanced Forms</a></li>
+                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-layouts.html">Form Layouts</a></li>
+                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-validation.html">Form Validation</a></li>
+                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-wizards.html">Form Wizards</a></li>
+                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-editor.html">WYSIWYG Editor</a></li>
+                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-element-sizes.html">Form Element-sizes</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-header"><span class="nav-label">Landing</span></li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Home" asp-action="LandingPage">
+                                    <span class="shape1"></span>
+                                    <span class="shape2"></span>
+                                    <i class="ti-layout sidemenu-icon menu-icon "></i>
+                                    <span class="sidemenu-label">Landing Page</span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="slide-right" id="slide-right"><i class="fe fe-chevron-right"></i></div>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div class="container">
-            <main role="main" class="pb-3">
-                @RenderBody()
-            </main>
+        <!-- End Left Sidebar -->
+        <!-- Main Content -->
+        <div class="main-content side-content pt-0">
+            <div class="main-container container-fluid">
+                <div class="inner-body">
+                    <partial name="_PageHeaderPartial" />
+                    @RenderBody()
+                </div>
+            </div>
         </div>
-
+        <!-- End Main Content -->
         <!-- Main Footer -->
         <div class="main-footer text-center">
             <div class="container">
                 <div class="row row-sm">
                     <div class="col-md-12">
                         <span>
-                            Copyright © 2023 <a href="javascript:void(0)">Chrysalis</a>. Designed by <a href="https://cadence-eva.netlify.app/">Cadence Eva Custin</a> All rights reserved.
+                            Copyright © 2023 <a href="javascript:void(0)">Chrysalis</a>. Designed by <a href="https://cadence-eva.netlify.app/">Cadence Eva Custin</a>. All rights reserved.
                         </span>
                     </div>
                 </div>
             </div>
         </div>
-
+        <!-- End Main Footer -->
     </div>
-
+    <!-- End Page -->
     <!-- Back-to-top -->
     <a href="#top" id="back-to-top"><i class="fe fe-arrow-up"></i></a>
 
     <!-- Jquery js-->
-    <script src="../assets/plugins/jquery/jquery.min.js"></script>
+    <script src="~/assets/plugins/jquery/jquery.min.js"></script>
 
     <!-- Bootstrap js-->
-    <script src="../assets/plugins/bootstrap/js/popper.min.js"></script>
-    <script src="../assets/plugins/bootstrap/js/bootstrap.min.js"></script>
+    <script src="~/assets/plugins/bootstrap/js/popper.min.js"></script>
+    <script src="~/assets/plugins/bootstrap/js/bootstrap.min.js"></script>
 
     <!-- Internal Chart.Bundle js-->
-    <script src="../assets/plugins/chart.js/Chart.bundle.min.js"></script>
+    <script src="~/assets/plugins/chart.js/Chart.bundle.min.js"></script>
 
     <!-- Peity js-->
-    <script src="../assets/plugins/peity/jquery.peity.min.js"></script>
+    <script src="~/assets/plugins/peity/jquery.peity.min.js"></script>
 
     <!-- Select2 js-->
-    <script src="../assets/plugins/select2/js/select2.min.js"></script>
-    <script src="../assets/js/select2.js"></script>
+    <script src="~/assets/plugins/select2/js/select2.min.js"></script>
+    <script src="~/assets/js/select2.js"></script>
 
     <!-- Perfect-scrollbar js -->
-    <script src="../assets/plugins/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+    <script src="~/assets/plugins/perfect-scrollbar/perfect-scrollbar.min.js"></script>
 
     <!-- Sidemenu js -->
-    <script src="../assets/plugins/sidemenu/sidemenu.js"></script>
+    <script src="~/assets/plugins/sidemenu/sidemenu.js"></script>
 
     <!-- Sidebar js -->
-    <script src="../assets/plugins/sidebar/sidebar.js"></script>
+    <script src="~/assets/plugins/sidebar/sidebar.js"></script>
 
     <!-- Internal Morris js -->
-    <script src="../assets/plugins/raphael/raphael.min.js"></script>
-    <script src="../assets/plugins/morris.js/morris.min.js"></script>
+    <script src="~/assets/plugins/raphael/raphael.min.js"></script>
+    <script src="~/assets/plugins/morris.js/morris.min.js"></script>
 
     <!-- Circle Progress js-->
-    <script src="../assets/js/circle-progress.min.js"></script>
-    <script src="../assets/js/chart-circle.js"></script>
+    <script src="~/assets/js/circle-progress.min.js"></script>
+    <script src="~/assets/js/chart-circle.js"></script>
 
     <!-- Internal Dashboard js-->
-    <script src="../assets/js/index.js"></script>
+    <script src="~/assets/js/index.js"></script>
 
     <!-- Color Theme js -->
-    <script src="../assets/js/themeColors.js"></script>
+    <script src="~/assets/js/themeColors.js"></script>
 
     <!-- Sticky js -->
-    <script src="../assets/js/sticky.js"></script>
+    <script src="~/assets/js/sticky.js"></script>
+
+    <!-- Spruha Custom js -->
+    <script src="~/assets/js/custom.js"></script>
 
     <!-- Custom JS -->
     <script src="~/js/site.js" asp-append-version="true"></script>

@@ -1,0 +1,98 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+
+    <link rel="icon" href="~/favicon.ico" type="image/x-icon" />
+    <title>@ViewBag.Title - Chrysalis</title>
+
+    <!-- Bootstrap CSS -->
+    <link id="style" href="~/assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Icons CSS -->
+    <link href="~/assets/plugins/web-fonts/icons.css" rel="stylesheet" />
+    <link href="~/assets/plugins/web-fonts/font-awesome/font-awesome.min.css" rel="stylesheet">
+    <link href="~/assets/plugins/web-fonts/plugin.css" rel="stylesheet" />
+
+    <!-- Style CSS -->
+    <link href="~/assets/css/style.css" rel="stylesheet" asp-append-version="true" />
+
+    <!-- Select2 CSS -->
+    <link href="~/assets/plugins/select2/css/select2.min.css" rel="stylesheet" />
+
+    <!-- Mutipleselect CSS -->
+    <link rel="stylesheet" href="~/assets/plugins/multipleselect/multiple-select.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="~/Chrysalis.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+
+<body class="ltr main-body leftmenu">
+    <!-- TO-DO: Loader? Wasn't working on first insert->
+
+    <!-- Page -->
+    <div class="page">
+        <!-- Main Content -->
+        <div class="page main-signin-wrapper">
+            @RenderBody()
+        </div>
+        <!-- End Main Content -->
+    </div>
+    <!-- End Page -->
+    <!-- Back-to-top -->
+    <a href="#top" id="back-to-top"><i class="fe fe-arrow-up"></i></a>
+
+    <!-- Jquery js-->
+    <script src="~/assets/plugins/jquery/jquery.min.js"></script>
+
+    <!-- Bootstrap js-->
+    <script src="~/assets/plugins/bootstrap/js/popper.min.js"></script>
+    <script src="~/assets/plugins/bootstrap/js/bootstrap.min.js"></script>
+
+    <!-- Internal Chart.Bundle js-->
+    <script src="~/assets/plugins/chart.js/Chart.bundle.min.js"></script>
+
+    <!-- Peity js-->
+    <script src="~/assets/plugins/peity/jquery.peity.min.js"></script>
+
+    <!-- Select2 js-->
+    <script src="~/assets/plugins/select2/js/select2.min.js"></script>
+    <script src="~/assets/js/select2.js"></script>
+
+    <!-- Perfect-scrollbar js -->
+    <script src="~/assets/plugins/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+
+    <!-- Sidemenu js -->
+    <script src="~/assets/plugins/sidemenu/sidemenu.js"></script>
+
+    <!-- Sidebar js -->
+    <script src="~/assets/plugins/sidebar/sidebar.js"></script>
+
+    <!-- Internal Morris js -->
+    <script src="~/assets/plugins/raphael/raphael.min.js"></script>
+    <script src="~/assets/plugins/morris.js/morris.min.js"></script>
+
+    <!-- Circle Progress js-->
+    <script src="~/assets/js/circle-progress.min.js"></script>
+    <script src="~/assets/js/chart-circle.js"></script>
+
+    <!-- Internal Dashboard js-->
+    <script src="~/assets/js/index.js"></script>
+
+    <!-- Color Theme js -->
+    <script src="~/assets/js/themeColors.js"></script>
+
+    <!-- Sticky js -->
+    <script src="~/assets/js/sticky.js"></script>
+
+    <!-- Spruha Custom js -->
+    <script src="~/assets/js/custom.js"></script>
+
+    <!-- Custom JS -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

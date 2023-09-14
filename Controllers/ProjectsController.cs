@@ -6,7 +6,6 @@ using Chrysalis.Models;
 using Chrysalis.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
-using Chrysalis.Extensions;
 using Chrysalis.Enums;
 using Chrysalis.Models.ViewModels;
 
@@ -43,14 +42,26 @@ namespace Chrysalis.Controllers
         // GET: Projects
         public async Task<IActionResult> Index()
         {
-            Company? company = await _companyService.GetCompanyByIdAsync(_companyId);
+            BTUser? user = await _context.Users
+                .Include(u => u.Projects)
+                .FirstOrDefaultAsync(u => u.Id == _userManager.GetUserId(User));
+            IEnumerable<string> userRoles = await _roleService.GetUserRolesAsync(user);
 
-            return View(company.Projects);
+            IEnumerable<Project> model = user!.Projects;
+
+            if (userRoles.Any(r => r.Equals(nameof(BTRoles.Admin))))
+            {
+                model = await _projectService.GetCompanyProjectsAsync(_companyId);
+            }
+
+            return View(model);
         }
 
         // GET: Projects/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int? id, string? swalMessage = null)
         {
+            ViewBag.SwalMessage = swalMessage;
+
             if (id == null) return NotFound();
 
             Project? project = await _projectService
@@ -58,76 +69,6 @@ namespace Chrysalis.Controllers
             if (project == null) return NotFound();
 
             return View(project);
-        }
-
-        // GET: Projects/Members
-        [Authorize(Policy = nameof(BTPolicies.AdPm))]
-        public async Task<IActionResult> Members(int? id)
-        {
-            if (id == null) return NotFound();
-
-            Project? project = await _projectService
-                .GetSingleCompanyProjectAsync(id, _companyId);
-            if (project == null) return NotFound();
-
-            ViewData["Members"] = new MultiSelectList(
-                project.Members, "Id", "FullName");
-            ViewData["NonMembers"] = new MultiSelectList(
-                await _projectService.GetCompanyMembersNotOnProject(id, _companyId),
-                "Id", "FullName");
-
-            return View(project);
-        }
-
-        // POST: Projects/Members
-        [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = nameof(BTPolicies.AdPm))]
-        public async Task<IActionResult> Members(int? id, List<string> selected, List<string> removed)
-        {
-            if (id == null) return NotFound();
-
-            Project? project = await _projectService
-                .GetSingleCompanyProjectAsync(
-                    id, _companyId);
-            if (project == null) return NotFound();
-
-            bool validUpdate = await TryUpdateModelAsync(
-                project,
-                string.Empty,
-                p => p.Members);
-
-            if (validUpdate)
-            {
-                try
-                {
-                    foreach (string memberId in selected)
-                    {
-                        BTUser? user = await _userManager.FindByIdAsync(memberId);
-                        if (user != null) project.Members.Add(user);
-                    }
-                    foreach (string memberId in removed)
-                    {
-                        BTUser? user = await _userManager.FindByIdAsync(memberId);
-                        if (user != null) project.Members.Remove(user);
-                    }
-                    await _projectService.UpdateProjectAsync(project);
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_projectService.ProjectExists(project.Id)) return NotFound();
-                    else throw;
-                }
-                return RedirectToAction(nameof(Members), new { id });
-            }
-            else
-            {
-                ViewData["Members"] = new MultiSelectList(
-                    project.Members, "Id", "FullName");
-                ViewData["NonMembers"] = new MultiSelectList(
-                    await _projectService.GetCompanyMembersNotOnProject(id, _companyId),
-                    "Id", "FullName");
-
-                return View(project);
-            }
         }
 
         // GET: Projects/Create
@@ -321,6 +262,109 @@ namespace Chrysalis.Controllers
             {
                 throw;
             }
+        }
+
+        // GET: Projects/AssignMembers
+        [Authorize(Policy = nameof(BTPolicies.AdPm))]
+        public async Task<IActionResult> AssignMembers(int? id)
+        {
+            if (id == null) return NotFound();
+
+            Project? project = await _projectService
+                .GetSingleCompanyProjectAsync(id, _companyId);
+            if (project == null) return NotFound();
+
+            ViewData["Members"] = new MultiSelectList(
+                project.Members, "Id", "FullName");
+            ViewData["NonMembers"] = new MultiSelectList(
+                await _projectService.GetCompanyMembersNotOnProject(id, _companyId),
+                "Id", "FullName");
+
+            return View(project);
+        }
+
+        // POST: Projects/AssignMembers
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = nameof(BTPolicies.AdPm))]
+        public async Task<IActionResult> AssignMembers(int? id, List<string> selected, List<string> removed)
+        {
+            if (id == null) return NotFound();
+
+            Project? project = await _projectService
+                .GetSingleCompanyProjectAsync(
+                    id, _companyId);
+            if (project == null) return NotFound();
+
+            bool validUpdate = await TryUpdateModelAsync(
+                project,
+                string.Empty,
+                p => p.Members);
+
+            if (validUpdate)
+            {
+                try
+                {
+                    foreach (string memberId in selected)
+                    {
+                        BTUser? user = await _userManager.FindByIdAsync(memberId);
+                        if (user != null) project.Members.Add(user);
+                    }
+                    foreach (string memberId in removed)
+                    {
+                        BTUser? user = await _userManager.FindByIdAsync(memberId);
+                        if (user != null) project.Members.Remove(user);
+                    }
+                    await _projectService.UpdateProjectAsync(project);
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!_projectService.ProjectExists(project.Id)) return NotFound();
+                    else throw;
+                }
+                return RedirectToAction(nameof(AssignMembers), new { id });
+            }
+            else
+            {
+                ViewData["Members"] = new MultiSelectList(
+                    project.Members, "Id", "FullName");
+                ViewData["NonMembers"] = new MultiSelectList(
+                    await _projectService.GetCompanyMembersNotOnProject(id, _companyId),
+                    "Id", "FullName");
+
+                return View(project);
+            }
+        }
+
+        [Authorize(Policy = nameof(BTPolicies.AdPm))]
+        public async Task<IActionResult> ConfirmArchive(int? projectId)
+        {
+            Project? model = await _projectService.GetSingleCompanyProjectAsync(projectId, _companyId);
+            if (model == null) return NotFound();
+
+            return View(model);
+        }
+
+        [Authorize(Policy = nameof(BTPolicies.AdPm))]
+        public async Task<IActionResult> ArchiveProject(int? projectId)
+        {
+            string? swalMessage = string.Empty;
+
+            bool success = await _projectService.ArchiveProjectAsync(projectId, _companyId);
+
+            if (!success) swalMessage = "Error: There was a problem while archiving the project. Please try again.";
+            else swalMessage = "Success: The project was archived.";
+            return RedirectToAction(nameof(Details), new { id = projectId, swalMessage });
+        }
+
+        [Authorize(Policy = nameof(BTPolicies.AdPm))]
+        public async Task<IActionResult> UnarchiveProject(int? projectId)
+        {
+            string? swalMessage = string.Empty;
+
+            bool success = await _projectService.UnarchiveProjectAsync(projectId, _companyId);
+
+            if (!success) swalMessage = "Error: There was a problem while unarchiving the project. Please try again.";
+            else swalMessage = "Success: The project was unarchived.";
+            return RedirectToAction(nameof(Details), new { id = projectId, swalMessage });
         }
     }
 }

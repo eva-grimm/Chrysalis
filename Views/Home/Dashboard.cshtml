@@ -1,0 +1,48 @@
+﻿@using Microsoft.AspNetCore.Identity;
+@using Chrysalis.Enums
+@inject UserManager<BTUser> _UserManager
+@inject ICompanyService _CompanyService
+@inject ITicketService _TicketService
+@inject IFileService _FileService
+
+@{
+    BTUser currentUser = ViewBag.CurrentUser;
+    IEnumerable<Ticket> userTickets = ViewBag.UserTickets;
+    IEnumerable<Ticket> importantTickets = ViewBag.ImportantTickets;
+}
+
+<!--Row-->
+<div class="row row-sm mt-lg-4">
+    <div class="col-12">
+        <div class="card bg-primary custom-card card-box">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="offset-xl-3 offset-sm-6 col-xl-8 col-sm-6 col-12 img-bg ">
+                        <h4 class="d-flex  mb-3">
+                            <span class="font-weight-bold text-white">Hello, @currentUser.FullName!</span>
+                        </h4>
+                        <p class="tx-white-7 mb-1">
+                            You have @userTickets.Count() tickets assigned to you
+                            @if (importantTickets.Count() == 1)
+                            {
+                                <span>, and @importantTickets.Count() unresolved ticket of at least high priority.</span>
+                            }
+                            else if (importantTickets.Count() > 1)
+                            {
+                                <span>, and @importantTickets.Count() unresolved tickets of at least high priority.</span>
+                            }
+                            else
+                            {
+                                <span>.</span>
+                            }
+                        </p>
+                    </div>
+                    <img src="@_FileService.ConvertByteArrayToFile(currentUser.ImageData,
+						currentUser.ImageType,DefaultImage.BTUserImage)" alt="user-img"
+                         class="rounded" style="width:100px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Row -->

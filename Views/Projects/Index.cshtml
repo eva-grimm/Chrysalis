@@ -1,87 +1,108 @@
 ﻿@model IEnumerable<Project>
+@inject IProjectService _ProjectService
 @inject IFileService _FileService
 
 @{
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
-
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
+<div class="row">
+    <div class="col-12 text-end">
+        <p>
+            <a asp-action="Create">Create New</a>
+        </p>
+    </div>
+</div>
 <table class="table">
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.Name)
+                Project
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Description)
+                End Date
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Created)
+                Progress
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.StartDate)
+                Project Manager
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.EndDate)
+                Status
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Archived)
+                Actions
             </th>
-            <th>
-                Image
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Company)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ProjectPriority)
-            </th>
-            <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Description)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Created)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.StartDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.EndDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Archived)
-            </td>
-            <td>
-                <img src="@_FileService.ConvertByteArrayToFile(item.ImageData,item.ImageType, DefaultImage.ProjectImage)" 
-                    style="width: 100px;"/> 
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Company.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ProjectPriority.Name)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a><br> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a><br> |
-                <!--TO-DO: if PM assigned, then show "Get PM" instead-->
-                <a asp-action="AssignPM" asp-route-projectId="@item.Id">Assign PM</a><br> |
-                <a asp-action="Members" asp-route-id="@item.Id">Members</a><br>
-            </td>
-        </tr>
-}
+        @foreach (Project? item in Model)
+        {
+            <tr>
+                <td>
+                    <b>@item.Name</b><br />
+                    <small>Created: @item.Created.ToLocalTime().ToString("MMM dd yyyy")</small>
+                </td>
+                <td>
+                    @item.EndDate.ToLocalTime().ToString("MMM dd yyyy")<br />
+                    <small>Priority: @item.ProjectPriority?.Name</small>
+                </td>
+                <td>
+                    <div class="progress">
+                        @{
+                            double projectLengthInHours = item.EndDate.Subtract(item.StartDate).TotalHours;
+                            double hoursRemaining = item.EndDate.Subtract(DateTime.Now).TotalHours;
+                            double hoursPast = projectLengthInHours - hoursRemaining;
+                            double percentProgress = Math.Ceiling(hoursPast / projectLengthInHours * 10);
+                            @if (percentProgress > 100) percentProgress = 100;
+                            <div class="progress-bar" role="progressbar" aria-valuenow="@percentProgress"
+                                 aria-valuemin="0" aria-valuemax="100" style="width:@percentProgress%;">
+                                <span class="progress-value">@percentProgress%</span>
+                            </div>
+                        }
+                    </div>
+                </td>
+                <td>
+                    @if (await _ProjectService.GetProjectManagerAsync(item.Id) == null)
+                    {
+                        <a asp-action="AssignPM" asp-controller="Projects" asp-route-projectId="@item.Id">
+                            Assign PM
+                        </a>
+                    }
+                    else
+                    {
+                        <p>
+                            @((await _ProjectService.GetProjectManagerAsync(item.Id))?.FullName)
+                        </p>
+                    }
+                </td>
+                <td>
+                    @if (!item.Archived)
+                    {
+                        <p>Active</p>
+                    }
+                    else
+                    {
+                        <p>Inactive</p>
+                    }
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a><br/>
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a><br/>
+                    <a asp-action="AssignMembers" asp-route-id="@item.Id">Manage Team</a><br/>
+                    <a asp-action="ConfirmArchive" asp-route-projectId="@item.Id">
+                        @if (!item.Archived)
+                        {
+                            <p>Archive</p>
+                        }
+                        else
+                        {
+                            <p>Unarchive</p>
+                        }
+                    </a><br/>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>
