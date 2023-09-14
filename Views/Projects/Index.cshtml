@@ -88,19 +88,17 @@
                     }
                 </td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a><br/>
-                    <a asp-action="Details" asp-route-id="@item.Id">Details</a><br/>
-                    <a asp-action="AssignMembers" asp-route-id="@item.Id">Manage Team</a><br/>
-                    <a asp-action="ConfirmArchive" asp-route-projectId="@item.Id">
-                        @if (!item.Archived)
-                        {
-                            <p>Archive</p>
-                        }
-                        else
-                        {
-                            <p>Unarchive</p>
-                        }
-                    </a><br/>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a><br />
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a><br />
+                    <a asp-action="AssignMembers" asp-route-id="@item.Id">Manage Team</a><br />
+                    @if (!item.Archived)
+                    {
+                        <a asp-action="ConfirmArchive" asp-route-projectId="@item.Id">Archive</a>
+                    }
+                    else
+                    {
+                        <a asp-action="ConfirmUnarchive" asp-route-projectId="@item.Id">Unarchive</a>
+                    }
                 </td>
             </tr>
         }

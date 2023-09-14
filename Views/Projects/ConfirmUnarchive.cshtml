@@ -3,10 +3,10 @@
 @inject IFileService _FileService
 
 @{
-    ViewBag.Title = "Confirm Archive";
+    ViewBag.Title = "Confirm Unarchive";
 }
 
-<h4>Are you sure you want to archive this project?</h4>
+<h4>Are you sure you want to unarchive this project?</h4>
 <div class="row">
     <div class="col-12 col-md-6">
         <div class="card custom-card">
@@ -57,16 +57,16 @@
                         Members: @Model.Members.Count()
                     </li>
                     <li>
-                        Active Tickets: @Model.Tickets.Where(t => t.TicketStatusId != (int)BTTicketStatuses.Resolved).Count()
+                        Tickets that will be active: @Model.Tickets.Where(t => t.TicketStatusId != (int)BTTicketStatuses.Resolved).Count()
                     </li>
                 </ul>
             </div>
         </div>
     </div>
-    <div class="col-12 d-flex mb-3">
+    <div class="col-12 d-flex">
         <input type="hidden" name="projectId" value="@Model.Id" />
-            <a asp-action="ArchiveProject" asp-route-projectId="@Model.Id"
-               class="btn btn-primary text-decoration-none">Archive</a>
+        <a asp-action="UnarchiveProject" asp-route-projectId="@Model.Id"
+           class="btn btn-primary text-decoration-none">Unarchive</a>
         <a asp-action="Index" class="btn btn-primary text-decoration-none ms-3">Cancel</a>
     </div>
 </div>
