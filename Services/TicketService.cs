@@ -63,14 +63,7 @@ namespace Chrysalis.Services
             }
         }
 
-        /// <summary>
-        /// Retrieves the Ticket that matches the provided ticketID, but only if
-        /// the user belongs to the company for that ticket.
-        /// </summary>
-        /// <param name="ticketId">ID of the Ticket to be retrieved</param>
-        /// <param name="companyId">Current User's CompanyID</param>
-        /// <returns>Returns matching ticket or null</returns>
-        public async Task<Ticket?> GetSingleCompanyTicketAsync(int? ticketId, int? companyId)
+        public async Task<Ticket?> GetTicketAsync(int? ticketId, int? companyId)
         {
             if (ticketId == null) return new Ticket();
 
@@ -85,6 +78,31 @@ namespace Chrysalis.Services
                         .ThenInclude(c => c.User)
                     .Include(t => t.Attachments)
                         .ThenInclude(a => a.User)
+                    .FirstOrDefaultAsync(t => t.Id == ticketId);
+                return ticket != null && ticket.Project!.CompanyId == companyId ? ticket : null;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        
+        public async Task<Ticket?> GetTicketAsNoTrackingAsync(int? ticketId, int? companyId)
+        {
+            if (ticketId == null) return new Ticket();
+
+            try
+            {
+                Ticket? ticket = await _context.Tickets
+                    .Include(t => t.Project)
+                    .Include(t => t.TicketType)
+                    .Include(t => t.TicketPriority)
+                    .Include(t => t.TicketStatus)
+                    .Include(t => t.Comments)
+                        .ThenInclude(c => c.User)
+                    .Include(t => t.Attachments)
+                        .ThenInclude(a => a.User)
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(t => t.Id == ticketId);
                 return ticket != null && ticket.Project!.CompanyId == companyId ? ticket : null;
             }

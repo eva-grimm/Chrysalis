@@ -2,23 +2,35 @@
 using Chrysalis.Enums;
 using Chrysalis.Models;
 using Chrysalis.Services.Interfaces;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.Design;
+using System.Data;
 
 namespace Chrysalis.Services
 {
     public class NotificiationService : INotificationService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IEmailSender _emailService;
+        private readonly IRoleService _rolesService;
+        private readonly IProjectService _projectService;
+        private readonly UserManager<BTUser> _userManager;
 
-        public NotificiationService(ApplicationDbContext context) 
-        { 
+        public NotificiationService(ApplicationDbContext context,
+            IEmailSender emailService,
+            IRoleService rolesService,
+            UserManager<BTUser> userManager,
+            IProjectService projectService)
+        {
             _context = context;
+            _emailService = emailService;
+            _rolesService = rolesService;
+            _userManager = userManager;
+            _projectService = projectService;
         }
 
-        /// <summary>
-        /// Adds provided Notification to the database.
-        /// </summary>
-        /// <param name="ticket">Notification to be added</param>
         public async Task AddNotificationAsync(Notification? notification)
         {
             if (notification == null) return;
@@ -34,10 +46,6 @@ namespace Chrysalis.Services
             }
         }
 
-        /// <summary>
-        /// Retrieves the specified user's notifications
-        /// </summary>
-        /// <param name="userId">User whose notifications are wanted</param>
         public async Task<List<Notification>> GetNotificationsByUserIdAsync(string? userId)
         {
             if (string.IsNullOrEmpty(userId)) return new List<Notification>();
@@ -46,9 +54,7 @@ namespace Chrysalis.Services
             {
                 List<Notification> notifications = await _context.Notifications
                     .Where(n => n.RecipientId == userId)
-                    .Include(n => n.NotificationType)
-                    .Include(n => n.Ticket)
-                    .Include(n => n.Project)
+                    .Include(n => n.Recipient)
                     .Include(n => n.Sender)
                     .ToListAsync();
 
@@ -60,34 +66,218 @@ namespace Chrysalis.Services
             }
         }
 
-        public Task<bool> NewDeveloperNotificationAsync(int? ticketId, string? developerId, string? senderId)
+        // need clarity
+        public async Task NotificationsByRoleAsync(int? companyId, Notification? notification, BTRoles role)
         {
-            throw new NotImplementedException();
+            if (notification == null) return;
+
+            try
+            {
+                IEnumerable<string> memberIds = (await _rolesService
+                    .GetUsersInRoleAsync(nameof(role), companyId))!
+                    .Select(u => u.Id);
+
+                // create copy of notification for each member of role
+                foreach (string memberId in memberIds)
+                {
+                    notification.Id = 0;
+                    notification.RecipientId = memberId;
+
+                    // Antonio's line, which makes no sense
+                    // because the Notification isn't being added to the DB
+                    //await _context.SaveChangesAsync();
+
+                    await AddNotificationAsync(notification);
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
-        public Task<bool> NewTicketNotificationAsync(int? ticketId, string? senderId)
+        public async Task<bool> NotifyDeveloperAsync(int? ticketId, string? developerId, string? senderId)
         {
-            throw new NotImplementedException();
+            if (ticketId == null
+                || string.IsNullOrEmpty(developerId)
+                || string.IsNullOrEmpty(senderId))
+                return false;
+
+            try
+            {
+                BTUser? user = await _userManager.FindByIdAsync(senderId);
+                Ticket? ticket = await _context.Tickets.FindAsync(ticketId);
+
+                Notification? notification = new()
+                {
+                    TicketId = ticket!.Id,
+                    Title = "Ticket Assigned to You",
+                    Message = $"Ticket: {ticket.Title} was assigned to you by {user?.FullName}",
+                    Created = DataUtility.GetPostGresDate(DateTime.Now),
+                    SenderId = senderId,
+                    RecipientId = developerId,
+                    NotificationType = new NotificationType()
+                    {
+                        Name = BTNotificationType.Ticket.ToString()
+                    }
+                };
+
+                await AddNotificationAsync(notification);
+                await SendEmailNotificationAsync(notification, "Ticket Assigned to You");
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+                throw;
+            }
         }
 
-        public Task NotificationsByRoleAsync(int? companyId, Notification? notification, BTRoles role)
+        // need clarity
+        public async Task<bool> NewTicketNotificationAsync(int? ticketId, string? senderId)
         {
-            throw new NotImplementedException();
+            if (ticketId == null || string.IsNullOrEmpty(senderId)) return false;
+
+            BTUser? user = await _userManager.FindByIdAsync(senderId);
+            Ticket? ticket = await _context.Tickets.FindAsync(ticketId);
+            BTUser? projectManager = await _projectService.GetProjectManagerAsync(ticket?.ProjectId);
+
+            if (ticket == null || user == null) return false;
+
+            try
+            {
+                Notification? notification = new()
+                {
+                    TicketId = ticket.Id,
+                    Title = "New Ticket Created",
+                    Message = $"New Ticket: {ticket.Title} was created by {user.FullName} ",
+                    Created = DataUtility.GetPostGresDate(DateTime.Now),
+                    SenderId = senderId,
+                    RecipientId = projectManager?.Id, // ?? senderId, TO-DO: WTF??
+                    NotificationType = new NotificationType()
+                    {
+                        Name = BTNotificationType.Ticket.ToString()
+                    }
+                };
+
+                if (projectManager != null)
+                {
+                    await AddNotificationAsync(notification);
+                    await SendEmailNotificationAsync(notification, "New Ticket Added");
+                }
+                // if project has no PM assigned yet, alert all company Admins
+                else
+                {
+                    await NotificationsByRoleAsync(user.CompanyId, notification, BTRoles.Admin);
+                    await SendEmailNotificationByRoleAsync(user.CompanyId, notification, BTRoles.Admin);
+                }
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+                throw;
+            }
         }
 
-        public Task<bool> SendEmailNotificationAsync(Notification? notification, string? emailSubject)
+        // need clarity
+        public async Task<bool> TicketUpdateNotificationAsync(int? ticketId, string? developerId, string? senderId = null)
         {
-            throw new NotImplementedException();
+            if (ticketId == null || string.IsNullOrEmpty(senderId)) return false;
+
+            BTUser? user = await _userManager.FindByIdAsync(senderId);
+            Ticket? ticket = await _context.Tickets
+                .Include(t => t.Project)
+                .FirstOrDefaultAsync(t => t.Id == ticketId);
+            BTUser? projectManager = await _projectService
+                .GetProjectManagerAsync(ticket?.ProjectId);
+
+            if (ticket == null || user == null) return false;
+
+            try
+            {
+                Notification? notification = new()
+                {
+                    TicketId = ticketId.Value,
+                    Title = "Ticket Updated",
+                    Message = $"Ticket: {ticket?.Title} was updated by {user?.FullName}",
+                    Created = DataUtility.GetPostGresDate(DateTime.Now),
+                    SenderId = senderId,
+                    RecipientId = projectManager?.Id, // ?? senderId, TO-DO: WTF??
+                    NotificationType = new NotificationType()
+                    {
+                        Name = BTNotificationType.Ticket.ToString()
+                    }
+                };
+
+                if (projectManager != null)
+                {
+                    await AddNotificationAsync(notification);
+                    await SendEmailNotificationAsync(notification, "Ticket Updated");
+                }
+                else
+                {
+                    // TO-DO: need clarification
+                    await NotificationsByRoleAsync(user!.CompanyId, notification, BTRoles.Admin);
+                    await SendEmailNotificationByRoleAsync(user!.CompanyId, notification, BTRoles.Admin);
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+                throw;
+            }
         }
 
-        public Task<bool> SendEmailNotificationByRoleAsync(int? companyId, Notification? notification, BTRoles role)
+        public async Task<bool> SendEmailNotificationAsync(Notification? notification, string? emailSubject)
         {
-            throw new NotImplementedException();
+            if (notification == null || emailSubject == null) return false;
+
+            try
+            {
+                // get email for recipient
+                BTUser? user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Id == notification.RecipientId);
+                string? userEmail = user?.Email;
+
+                if (userEmail != null)
+                {
+                    await _emailService.SendEmailAsync(userEmail, emailSubject, notification.Message!);
+                    return true;
+                }
+                else return false;
+            }
+            catch (Exception)
+            {
+                return false;
+                throw;
+            }
         }
 
-        public Task<bool> TicketUpdateNotificationAsync(int? ticketId, string? developerId, string? senderId = null)
+        public async Task<bool> SendEmailNotificationByRoleAsync(int? companyId, Notification? notification, BTRoles role)
         {
-            throw new NotImplementedException();
+            if (companyId == null || notification == null) return false;
+
+            try
+            {
+                IEnumerable<string?> memberEmails = (await _rolesService
+                    .GetUsersInRoleAsync(nameof(role), companyId))!
+                    .Select(u => u.Email);
+
+                foreach (string? email in memberEmails)
+                {
+                    if (string.IsNullOrEmpty(email)) continue;
+                    await _emailService.SendEmailAsync(email, notification.Title!, notification.Message!);
+                }
+                return true;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
     }
 }

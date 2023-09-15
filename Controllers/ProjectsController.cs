@@ -20,7 +20,7 @@ namespace Chrysalis.Controllers
         private readonly ICompanyService _companyService;
         private readonly IFileService _fileService;
         private readonly ITicketService _ticketService;
-        private readonly IRolesService _roleService;
+        private readonly IRoleService _roleService;
 
         public ProjectsController(ApplicationDbContext context,
             UserManager<BTUser> userManager,
@@ -28,7 +28,7 @@ namespace Chrysalis.Controllers
             ICompanyService companyService,
             IFileService fileService,
             ITicketService ticketService,
-            IRolesService roleService)
+            IRoleService roleService)
         {
             _context = context;
             _userManager = userManager;

@@ -5,6 +5,7 @@ using Chrysalis.Models;
 using Chrysalis.Services;
 using Chrysalis.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,7 +28,9 @@ builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<IFileService, FileService>();
-builder.Services.AddScoped<IRolesService, RolesService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<ITicketHistoryService, TicketHistoryService>();
+builder.Services.AddScoped<IEmailSender, EmailService>();
 
 // custom role policies
 builder.Services.AddAuthorization(options =>

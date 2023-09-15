@@ -11,11 +11,11 @@ namespace Chrysalis.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<BTUser> _userManager;
-        private readonly IRolesService _roleService;
+        private readonly IRoleService _roleService;
 
         public ProjectService(ApplicationDbContext context,
             UserManager<BTUser> userManager,
-            IRolesService roleService)
+            IRoleService roleService)
         {
             _context = context;
             _userManager = userManager;

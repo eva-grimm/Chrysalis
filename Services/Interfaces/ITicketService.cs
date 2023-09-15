@@ -8,7 +8,8 @@ namespace Chrysalis.Services.Interfaces
         public bool TicketExists(int id);
         public Task AddTicketAsync(Ticket? ticket);
         public Task<bool> UpdateTicketAsync(Ticket? ticket);
-        public Task<Ticket?> GetSingleCompanyTicketAsync(int? ticketId, int? companyId);
+        public Task<Ticket?> GetTicketAsync(int? ticketId, int? companyId);
+        public Task<Ticket?> GetTicketAsNoTrackingAsync(int? ticketId, int? companyId);
         public Task<IEnumerable<Ticket>> GetAllCompanyTicketsAsync(int? companyId);
         public Task<IEnumerable<Ticket>> GetAllUserTicketsAsync(string? userId, int? companyId);
         public Task<IEnumerable<TicketPriority>> GetAllTicketPriorities();

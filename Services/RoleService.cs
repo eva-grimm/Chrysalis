@@ -6,12 +6,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chrysalis.Services
 {
-    public class RolesService : IRolesService
+    public class RoleService : IRoleService
     {
         private readonly UserManager<BTUser> _userMananger;
         private readonly ApplicationDbContext _context;
 
-        public RolesService(UserManager<BTUser> userMananger,
+        public RoleService(UserManager<BTUser> userMananger,
             ApplicationDbContext context)
         {
             _userMananger = userMananger;

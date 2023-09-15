@@ -982,5 +982,10 @@ namespace Chrysalis.Data
                 throw;
             }
         }
+
+        public static DateTime GetPostGresDate(DateTime localTime)
+        {
+            return localTime.ToUniversalTime();
+        }
     }
 }

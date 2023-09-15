@@ -21,12 +21,12 @@ namespace Chrysalis.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<BTUser> _userManager;
         private readonly ICompanyService _companyService;
-        private readonly IRolesService _roleService;
+        private readonly IRoleService _roleService;
 
         public CompaniesController(ApplicationDbContext context,
             UserManager<BTUser> userManager,
             ICompanyService companyService,
-            IRolesService roleService)
+            IRoleService roleService)
         {
             _context = context;
             _userManager = userManager;

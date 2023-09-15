@@ -19,17 +19,21 @@ namespace Chrysalis.Controllers
         private readonly UserManager<BTUser> _userManager;
         private readonly ICompanyService _companyService;
         private readonly ITicketService _ticketService;
-        private readonly IRolesService _roleService;
+        private readonly IRoleService _roleService;
         private readonly IFileService _fileService;
         private readonly IProjectService _projectService;
+        private readonly ITicketHistoryService _historyService;
+        private readonly INotificationService _notificationService;
 
         public TicketsController(ApplicationDbContext context,
             UserManager<BTUser> userManager,
             ICompanyService companyService,
             ITicketService ticketService,
-            IRolesService roleService,
+            IRoleService roleService,
             IFileService fileService,
-            IProjectService projectService)
+            IProjectService projectService,
+            ITicketHistoryService historyService,
+            INotificationService notificationService)
         {
             _context = context;
             _userManager = userManager;
@@ -38,6 +42,8 @@ namespace Chrysalis.Controllers
             _roleService = roleService;
             _fileService = fileService;
             _projectService = projectService;
+            _historyService = historyService;
+            _notificationService = notificationService;
         }
 
         // GET: Tickets
@@ -58,7 +64,7 @@ namespace Chrysalis.Controllers
             ViewData["StatusMessage"] = statusMessage;
 
             Ticket? ticket = await _ticketService
-                .GetSingleCompanyTicketAsync(id, _companyId);
+                .GetTicketAsync(id, _companyId);
             if (ticket == null) return NotFound();
 
             return View(ticket);
@@ -95,9 +101,9 @@ namespace Chrysalis.Controllers
                     ticket.Archived = false;
                     ticket.ArchivedByProject = false;
 
-                    // get and assign ID of TicketStatus by the name of New
+                    // attempt to get and assign ID of TicketStatus by the name of New
                     // if failure, assign 0 to catch exception
-                    int? ticketStatusId = await _ticketService.GetTicketStatusIdAsync(BTTicketStatuses.New);
+                    int? ticketStatusId = await _ticketService.GetTicketStatusIdAsync(BTTicketStatuses.New) ?? 0;
                     ticket.TicketStatusId = ticketStatusId.Value;
                     await _ticketService.AddTicketAsync(ticket);
                 }
@@ -111,6 +117,12 @@ namespace Chrysalis.Controllers
                     if (!_ticketService.TicketExists(ticket.Id)) return NotFound();
                     else throw;
                 }
+
+                // add history and send notification
+                await _historyService.AddHistoryAsync(null, ticket, _userManager.GetUserId(User));
+                // TO-DO: test once notifications are online
+                await _notificationService.NewTicketNotificationAsync(ticket.Id, _userManager.GetUserId(User));
+
                 return RedirectToAction(nameof(Index));
             }
             else
@@ -129,7 +141,7 @@ namespace Chrysalis.Controllers
         {
             if (id == null) return NotFound();
 
-            Ticket? ticket = await _ticketService.GetSingleCompanyTicketAsync(id, _companyId);
+            Ticket? ticket = await _ticketService.GetTicketAsync(id, _companyId);
             if (ticket == null) return NotFound();
 
             ViewData["TicketTypes"] = new SelectList(await _ticketService.GetAllTicketTypes(), "Id", "Name");
@@ -146,11 +158,11 @@ namespace Chrysalis.Controllers
         {
             // TO-DO: security check
             // who should be allowed to edit the ticket?
-            Ticket? ticket = await _ticketService.GetSingleCompanyTicketAsync(id, _companyId);
-            if (ticket == null) return NotFound();
+            Ticket? oldTicket = await _ticketService.GetTicketAsNoTrackingAsync(id, _companyId);
+            if (oldTicket == null) return NotFound();
 
             bool validUpdate = await TryUpdateModelAsync(
-                ticket,
+                oldTicket,
                 string.Empty,
                 t => t.TicketTypeId,
                 t => t.TicketStatusId,
@@ -163,16 +175,23 @@ namespace Chrysalis.Controllers
 
             if (validUpdate)
             {
+                // attempt to update ticket
                 try
                 {
-                    ticket.Updated = DateTime.Now;
-                    await _ticketService.UpdateTicketAsync(ticket);
+                    oldTicket.Updated = DateTime.Now;
+                    await _ticketService.UpdateTicketAsync(oldTicket);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!_ticketService.TicketExists(ticket.Id)) return NotFound();
+                    if (!_ticketService.TicketExists(oldTicket.Id)) return NotFound();
                     else throw;
                 }
+
+                // add history and send notification
+                Ticket? newTicket = await _ticketService.GetTicketAsNoTrackingAsync(id, _companyId);
+                await _historyService.AddHistoryAsync(oldTicket, newTicket, _userManager.GetUserId(User));
+                await _notificationService.TicketUpdateNotificationAsync(id, _userManager.GetUserId(User));
+
                 return RedirectToAction(nameof(Index));
             }
             else
@@ -181,12 +200,11 @@ namespace Chrysalis.Controllers
                 ViewData["TicketStatuses"] = new SelectList(await _ticketService.GetAllTicketStatuses(), "Id", "Name");
                 ViewData["TicketPriorities"] = new SelectList(await _ticketService.GetAllTicketPriorities(), "Id", "Name");
                 ViewData["DeveloperUsers"] = new SelectList(await _roleService.GetUsersInRoleAsync(BTRoles.Developer.ToString(), _companyId), "Id", "FullName");
-                return View(ticket);
+                return View(oldTicket);
             }
         }
 
-        // POST: AddTicketComment
-        [HttpPost, Authorize(Policy = nameof(BTPolicies.AdPmDev))]
+        [Authorize(Policy = nameof(BTPolicies.AdPmDev))]
         public async Task<IActionResult> AddTicketComment(int? id, string? comment)
         {
             if (id == null) return NotFound();
@@ -194,14 +212,12 @@ namespace Chrysalis.Controllers
             // TO-DO: security check
             // who should be allowed to edit the ticket?
 
-            Ticket? ticket = await _ticketService.GetSingleCompanyTicketAsync(id, _companyId);
+            Ticket? ticket = await _ticketService.GetTicketAsync(id, _companyId);
             if (ticket == null) return NotFound();
 
-            //bool validUpdate = await TryUpdateModelAsync(ticket, string.Empty,
-            //                    t => t.);
             try
             {
-                TicketComment ticketComment = new TicketComment
+                TicketComment ticketComment = new()
                 {
                     TicketId = ticket.Id,
                     UserId = _userManager.GetUserId(User),

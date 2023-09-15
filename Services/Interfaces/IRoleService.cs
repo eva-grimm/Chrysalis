@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Chrysalis.Services.Interfaces
 {
-    public interface IRolesService
+    public interface IRoleService
     {
         public Task<bool> AddUserToRoleAsync(BTUser? user, string? roleName);
         public Task<List<IdentityRole>> GetRolesAsync();
