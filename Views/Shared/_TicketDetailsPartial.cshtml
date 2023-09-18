@@ -1,0 +1,14 @@
+﻿@model Ticket
+
+<div class="card custom-card hover-card overflow-hidden">
+    <div class="card-title">Project Details</div>
+    <div class="card-body ps-3">
+        <ul>
+            <li>Created: <span class="badge bg-light">@Model.Created.ToString("MM.dd.yyyy")</span></li>
+            <li>Project Deadline: <span class="badge bg-light">@Model.Project?.EndDate.ToString("MM.dd.yyyy")</span></li>
+            <li>Type: <span class="badge bg-light">@Model.TicketType?.Name</span></li>
+            <li>Priority: <span class="badge bg-danger">@Model.TicketPriority?.Name</span></li>
+            <li>Status: <span class="badge bg-primary">@Model.TicketStatus?.Name</span></li>
+        </ul>
+    </div>
+</div>

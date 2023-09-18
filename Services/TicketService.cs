@@ -16,29 +16,20 @@ namespace Chrysalis.Services
             _context = context;
         }
 
-        /// <summary>
-        /// Provides a bool indicating whether a ticket exists that
-        /// matches the provided ID.
-        /// </summary>
-        /// <param name="id">Potential ID of a Ticket</param>
-        /// <returns>#</returns>
         public bool TicketExists(int id)
         {
             return _context.Tickets.Any(t => t.Id == id);
         }
 
-        /// <summary>
-        /// Adds provided Ticket to the database.
-        /// </summary>
-        /// <param name="ticket">Ticket to be added</param>
-        public async Task AddTicketAsync(Ticket? ticket)
+        public async Task<bool> AddTicketAsync(Ticket? ticket)
         {
-            if (ticket == null) return;
+            if (ticket == null) return false;
 
             try
             {
                 _context.Add(ticket);
                 await _context.SaveChangesAsync();
+                return true;
             }
             catch (Exception)
             {
@@ -63,7 +54,7 @@ namespace Chrysalis.Services
             }
         }
 
-        public async Task<Ticket?> GetTicketAsync(int? ticketId, int? companyId)
+        public async Task<Ticket?> GetTicketByIdAsync(int? ticketId, int? companyId)
         {
             if (ticketId == null) return new Ticket();
 
@@ -87,7 +78,7 @@ namespace Chrysalis.Services
             }
         }
         
-        public async Task<Ticket?> GetTicketAsNoTrackingAsync(int? ticketId, int? companyId)
+        public async Task<Ticket?> GetTicketByIdAsNoTrackingAsync(int? ticketId, int? companyId)
         {
             if (ticketId == null) return new Ticket();
 
@@ -112,11 +103,7 @@ namespace Chrysalis.Services
             }
         }
 
-        /// <summary>
-        /// Gets all tickets for the company the current user belongs to.
-        /// </summary>
-        /// <param name="companyId">Current User's CompanyID</param>
-        public async Task<IEnumerable<Ticket>> GetAllCompanyTicketsAsync(int? companyId)
+        public async Task<IEnumerable<Ticket>> GetCompanyTicketsAsync(int? companyId)
         {
             try
             {
@@ -144,11 +131,11 @@ namespace Chrysalis.Services
             }
         }
 
-		public async Task<IEnumerable<Ticket>> GetAllUserTicketsAsync(string? userId, int? companyId)
+		public async Task<IEnumerable<Ticket>> GetUserTicketsAsync(string? userId, int? companyId)
         {
 			try
 			{
-                IEnumerable<Ticket> tickets = await GetAllCompanyTicketsAsync(companyId);
+                IEnumerable<Ticket> tickets = await GetCompanyTicketsAsync(companyId);
 
 				return tickets.Where(t => t.DeveloperUserId == userId);
 			}
@@ -158,23 +145,17 @@ namespace Chrysalis.Services
 			}
 		}
 
-		/// <summary>
-		/// Returns all TicketPriorities.
-		/// </summary>
-		public async Task<IEnumerable<TicketPriority>> GetAllTicketPriorities()
+		public async Task<IEnumerable<TicketPriority>> GetTicketPrioritiesAsync()
         {
             return await _context.TicketPriorities.ToListAsync();
         }
 
-        /// <summary>
-        /// Returns all TicketStatuses.
-        /// </summary>
-        public async Task<IEnumerable<TicketStatus>> GetAllTicketStatuses()
+        public async Task<IEnumerable<TicketStatus>> GetTicketStatusesAsync()
         {
             return await _context.TicketStatuses.ToListAsync();
         }
 
-        public async Task<int?> GetTicketStatusIdAsync(BTTicketStatuses status)
+        public async Task<int?> GetTicketStatusByIdAsync(BTTicketStatuses status)
         {
             string? statusName = status.ToString();
 
@@ -184,10 +165,7 @@ namespace Chrysalis.Services
             return ticketStatus!.Id;
         }
 
-        /// <summary>
-        /// Returns all TicketTypes.
-        /// </summary>
-        public async Task<IEnumerable<TicketType>> GetAllTicketTypes()
+        public async Task<IEnumerable<TicketType>> GetTicketTypesAsync()
         {
             return await _context.TicketTypes.ToListAsync();
         }

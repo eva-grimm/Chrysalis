@@ -1,37 +1,62 @@
-﻿@using Chrysalis.Models.ViewModels
-@model IEnumerable<ManageUserRolesViewModel>
+﻿@using Microsoft.AspNetCore.Identity;
+@model IEnumerable<BTUser>
+@inject IRoleService _RoleService
+
+@{
+    ViewBag.Title = "Manage Roles";
+}
 
 <div class="row">
-    <h2 class="m-t-0 h3"><b>Manage Member Roles </b></h2>
-    @foreach (var viewModel in Model)
-    {
-        <div class="row">
-            <div class="card col-4 m-3">
-                <div class="card-body">
-                    <p class="text-muted font-13 m-b-30">
-                        This form displays the current roles assigned to the user: <strong class="text-info">@viewModel.BTUser!.FullName</strong>.
-                        Use the dropdown to select the roles this user should be assigned.
-                        Once roles are selected, click "Assign Roles" to submit the form.
-                    </p>
-                    <hr />
-                    <form asp-action="ManageUserRoles" asp-controller="Companies" method=post>
-                        <input type="hidden" asp-for="@viewModel.BTUser.Id" />
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="form-group">
-                                    <label asp-for="@viewModel.Roles" class="custom-label"> Roles for @viewModel.BTUser.FullName </label>
-                                    <select asp-for="@viewModel.SelectedRoles" class="form-control" asp-items="@viewModel.Roles">
-                                    </select>
-                                    <hr />
-                                </div>
-                                <div class="form-group">
-                                    <input type="submit" value="Assign Role" class="btn btn-info" />
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+    <div class="d-flex flex-column flex-md-row">
+        <h2 class="m-t-0 h3"><b>Manage Member Roles </b></h2>
+        <input id="memberSearch" type="search" class="form-control" />
+    </div>
+    <div id="memberCards" class="row row-cols-1 row-cols-lg-2 row-cols-xl-3">
+        @foreach (BTUser member in Model)
+        {
+            <form asp-action="ManageUserRolesConfirmed" asp-controller="Companies" method=post>
+                <input type="hidden" name="userId" value="@member.Id" />
+                <div class="card col row">
+                    <div class="col-3">@member.FullName</div>
+                    <div class="col-6"><select name="selected" class="form-control" asp-items="@await _RoleService.GetUserRoleSelectListAsync(member)"></select></div>
+                    <div class="col-3"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i></button></div>
                 </div>
-            </div>
-        </div>
-    }
+            </form>
+        }
+    </div>
 </div>
+
+@section Scripts {
+    <!--Start search function-->
+    <script>
+        $(document).ready(function () {
+            $('#memberSearch').keyup(function () {
+                let searchString = $(this).val();
+                $(`.card > .col-3:not( :contains(${searchString}))`).hide();
+                $(`.card > .col-3:contains(${searchString})`).show();
+            });
+        });
+    </script>
+    <!--End search function-->
+    <!--Sweet Alerts-->
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let message = '@(ViewBag.SwalMessage)';
+        if (!message.includes("Error") && message != '') {
+            Swal.fire({
+                backdrop: false,
+                icon: 'success',
+                title: message,
+                showConfirmButton: true
+            });
+        } else if (message.includes("Error")) {
+            Swal.fire({
+                backdrop: false,
+                icon: 'error',
+                title: 'Oops...',
+                text: message
+            });
+        }
+    </script>
+    <!--End Sweet Alerts-->
+}

@@ -1,0 +1,26 @@
+﻿@model BTUser
+@inject IFileService _FileService
+@inject IRoleService _RoleService
+
+<div class="card custom-card card-aside hover-card">
+    @*TO-DO: Add link to user profile or something similar*@
+    <a class="card-aside-column cover-image rounded-start-11" href="#"
+       data-image-src="@_FileService.ConvertByteArrayToFile(Model.ImageData,Model.ImageType,DefaultImage.BTUserImage)"
+       style="background: url('@_FileService.ConvertByteArrayToFile(Model.ImageData,Model.ImageType,DefaultImage.BTUserImage)') center"></a>
+    <div class="card-body ps-3">
+        <h5 class="main-content-label tx-dark tx-medium">@Model?.FullName</h5>
+        <p>
+            @if (Model == null)
+            {
+                <span>Unassigned</span>
+            }
+            else
+            {
+                @foreach (string role in await _RoleService.GetUserRolesAsync(Model))
+                {
+                    <span>@role</span>
+                }
+            }
+        </p>
+    </div>
+</div>

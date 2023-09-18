@@ -36,7 +36,7 @@ namespace Chrysalis.Controllers
         public async Task<IActionResult> Dashboard()
         {
             BTUser? currentUser = await _companyService.GetCompanyUserByIdAsync(_userManager.GetUserId(User));
-            IEnumerable<Ticket> userTickets = await _ticketService.GetAllUserTicketsAsync(currentUser.Id, _companyId);
+            IEnumerable<Ticket> userTickets = await _ticketService.GetUserTicketsAsync(currentUser.Id, _companyId);
             IEnumerable<Ticket> importantTickets = userTickets
                 .Where(t => t.TicketStatusId != (int)BTTicketStatuses.Resolved)
                 .Where(t => t.TicketPriorityId != (int)BTTicketPriorities.High
@@ -52,6 +52,11 @@ namespace Chrysalis.Controllers
         public IActionResult LandingPage()
         {
             return View();
+        }
+
+        public IActionResult ChrysalisException(string? exceptionMessage, int? errorCode)
+        {
+            return View(new ErrorViewModel { ExceptionMessage = exceptionMessage, ErrorCode = errorCode });
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

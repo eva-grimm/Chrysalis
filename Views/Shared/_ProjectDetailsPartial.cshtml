@@ -1,0 +1,31 @@
+﻿@model Project
+
+<div class="card custom-card hover-card overflow-hidden">
+    <div class="card-body ps-3">
+        <div class="row">
+            <div class="col-12 col-md-6 d-flex justify-content-evenly">
+                <strong>Created: </strong>
+                <span class="badge bg-light">@Model.Created.ToString("MM.dd.yyyy")</span>
+            </div>
+            <div class="col-12 col-md-6 d-flex justify-content-evenly">
+                <strong>Deadline: </strong>
+                <span class="badge bg-light">@Model.EndDate.ToString("MM.dd.yyyy")</span>
+            </div>
+            <div class="col-12 col-md-6 pt-md-3 d-flex justify-content-evenly">
+                <strong>Priority: </strong>
+                <span class="badge bg-danger">@Model.ProjectPriority?.Name</span>
+            </div>
+            <div class="col-12 col-md-6 pt-md-3 d-flex justify-content-evenly">
+                <strong>Status: </strong>
+                @if (!Model.Archived)
+                {
+                    <span class="badge bg-primary">Active</span>
+                }
+                else
+                {
+                    <span class="badge bg-dark">Inactive</span>
+                }
+            </div>
+        </div>
+    </div>
+</div>

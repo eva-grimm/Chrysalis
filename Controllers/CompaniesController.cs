@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Chrysalis.Data;
 using Chrysalis.Models;
 using Chrysalis.Services.Interfaces;
-using Chrysalis.Models.ViewModels;
 using Chrysalis.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -16,170 +15,157 @@ using Chrysalis.Enums;
 
 namespace Chrysalis.Controllers
 {
-    public class CompaniesController : BaseController
-    {
-        private readonly ApplicationDbContext _context;
-        private readonly UserManager<BTUser> _userManager;
-        private readonly ICompanyService _companyService;
-        private readonly IRoleService _roleService;
+	public class CompaniesController : BaseController
+	{
+		private readonly ApplicationDbContext _context;
+		private readonly UserManager<BTUser> _userManager;
+		private readonly ICompanyService _companyService;
+		private readonly IRoleService _roleService;
+		private readonly IFileService _fileService;
 
-        public CompaniesController(ApplicationDbContext context,
-            UserManager<BTUser> userManager,
-            ICompanyService companyService,
-            IRoleService roleService)
-        {
-            _context = context;
-            _userManager = userManager;
-            _companyService = companyService;
-            _roleService = roleService;
-        }
+		public CompaniesController(ApplicationDbContext context,
+			UserManager<BTUser> userManager,
+			ICompanyService companyService,
+			IRoleService roleService,
+			IFileService fileService)
+		{
+			_context = context;
+			_userManager = userManager;
+			_companyService = companyService;
+			_roleService = roleService;
+			_fileService = fileService;
+		}
 
-        // GET: Companies
-        //public async Task<IActionResult> Index()
-        //{
-        //      return _context.Companies != null ? 
-        //                  View(await _context.Companies.ToListAsync()) :
-        //                  Problem("Entity set 'ApplicationDbContext.Companies'  is null.");
-        //}
+		// GET: Companies
+		public async Task<IActionResult> Index()
+		{
+			return View(await _companyService.GetCompanyByIdAsync(_companyId));
+		}
 
-        // GET: Companies/Details/5
-        public async Task<IActionResult> Details()
-        {
-            Company?  company = await _context.Companies
-                .FirstOrDefaultAsync(m => m.Id == _companyId);
-            if (company == null) return NotFound();
+		// GET: Companies/Details/5
+		public async Task<IActionResult> Details()
+		{
+			Company? company = await _context.Companies
+				.FirstOrDefaultAsync(m => m.Id == _companyId);
+			if (company == null) return NotFound();
 
-            return View(company);
-        }
+			return View(company);
+		}
 
-        // GET: Companies/Create
-        [Authorize(Roles = "Admin")]
-        public IActionResult Create()
-        {
-            return View();
-        }
+		// GET: Companies/Create
+		[Authorize(Roles = "Admin")]
+		public IActionResult Create()
+		{
+			return View();
+		}
 
-        // POST: Companies/Create
-        [HttpPost,ValidateAntiForgeryToken,Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([Bind("Name,Description,ImageData,ImageType")] Company company)
-        {
-            if (ModelState.IsValid)
-            {
-                _context.Add(company);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(company);
-        }
+		// POST: Companies/Create
+		[HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin")]
+		public async Task<IActionResult> Create([Bind("Name,Description,ImageData,ImageType")] Company company)
+		{
+			if (ModelState.IsValid)
+			{
+				_context.Add(company);
+				await _context.SaveChangesAsync();
+				return RedirectToAction(nameof(Index));
+			}
+			return View(company);
+		}
 
-        // GET: Companies/Edit/5
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Edit()
-        {
-            Company? company = await _context.Companies.FindAsync(_companyId);
-            if (company == null) return NotFound();
+		// GET: Companies/Edit/5
+		[Authorize(Roles = "Admin")]
+		public async Task<IActionResult> Edit()
+		{
+			Company? company = await _context.Companies.FindAsync(_companyId)
+				?? throw new BadHttpRequestException("Cannot find your company", 500);
 
-            return View(company);
-        }
+			return View(company);
+		}
 
-        // POST: Companies/Edit/5
-        [HttpPost,ValidateAntiForgeryToken, Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Edit([Bind("Id,Name,Description,ImageData,ImageType")] Company company)
-        {
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(company);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_companyService.CompanyExists(company.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(company);
-        }
+		// POST: Companies/Edit/5
+		[HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin")]
+		public async Task<IActionResult> Edit(int companyId)
+		{
+			Company? company = await _companyService.GetCompanyByIdAsync(_companyId)
+				?? throw new BadHttpRequestException("Cannot find specified company", 400);
 
-        // GET: Companies/Delete/5
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Delete()
-        {
-            Company? company = await _context.Companies
-                .FirstOrDefaultAsync(m => m.Id == _companyId);
-            if (company == null) return NotFound();
+			// TO-DO: security check
 
-            return View(company);
-        }
+			bool validUpdate = await TryUpdateModelAsync(
+				company,
+				string.Empty,
+				c => c.Name,
+				c => c.Description,
+				c => c.ImageFile);
 
-        // POST: Companies/Delete/5
-        [HttpPost, ActionName("Delete"), Authorize(Roles = "Admin")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed()
-        {
-            if (_context.Companies == null)
-            {
-                return Problem("Entity set 'ApplicationDbContext.Companies'  is null.");
-            }
-            var company = await _context.Companies.FindAsync(_companyId);
-            if (company != null)
-            {
-                _context.Companies.Remove(company);
-            }
-            
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+			if (!validUpdate) return View();
+			else
+			{
+				try
+				{
+					if (company.ImageFile != null)
+					{
+						company.ImageData = await _fileService
+							.ConvertFileToByteArrayAsync(company.ImageFile);
+						company.ImageType = company.ImageFile.ContentType;
+					}
 
-        [HttpGet,Authorize(Roles=nameof(BTRoles.Admin))]
-        public async Task<IActionResult> ManageUserRoles()
-        {
-            List<ManageUserRolesViewModel> model = new();
+					bool success = await _companyService.UpdateCompanyAsync(company);
+					if (!success) throw new BadHttpRequestException("Problem updating the company", 500);
 
-            List<BTUser> companyUsers = await _companyService.GetAllCompanyUsersAsync(_companyId);
-            BTUser currentUser = await _companyService.GetCompanyUserByIdAsync(_userManager.GetUserId(User));
-            companyUsers.Remove(currentUser); // to prevent removing own permissions
+					return RedirectToAction(nameof(Index));
+				}
+				catch (Exception)
+				{
+					throw new BadHttpRequestException("Problem updating the company", 500);
+				}
+			}
+		}
 
-            foreach (BTUser companyUser in companyUsers)
-            {
-                IEnumerable<string>? currentRoles = await _roleService.GetUserRolesAsync(companyUser);
+		public async Task<IActionResult> CompanyUsers(string? swalMessage = null)
+		{
+			ViewBag.SwalMessage = swalMessage;
 
-                ManageUserRolesViewModel viewModel = new()
-                {
-                    BTUser = companyUser,
-                    Roles = new MultiSelectList (await _roleService.GetRolesAsync(),"Name","Name", currentRoles),
-                };
+			IEnumerable<BTUser> model = await _companyService.GetCompanyUsersAsync(_companyId);
 
-                model.Add(viewModel);
-            }
-            return View(model);
-        }
+			return View(model);
+		}
 
-        [HttpPost,ValidateAntiForgeryToken,Authorize(Roles = "Admin")]
-        public async Task<IActionResult> ManageUserRoles(ManageUserRolesViewModel viewModel)
-        {
-            BTUser? user = await _companyService.GetCompanyUserByIdAsync(_userManager.GetUserId(User));
+		[HttpGet, Authorize(Roles = nameof(BTRoles.Admin))]
+		public async Task<IActionResult> ManageUserRoles(string? incomingMessage = null)
+		{
+			ViewBag.SwalMessage = incomingMessage;
 
-            IEnumerable<string>? currentRoles = await _roleService.GetUserRolesAsync(user);
-            string? selectedRole = viewModel.SelectedRoles!.FirstOrDefault();
+			BTUser? currentUser = await _userManager.GetUserAsync(User)
+				?? throw new BadHttpRequestException("Error retrieving your user login", 500);
+			List<BTUser> model = await _companyService.GetCompanyUsersAsync(_companyId)
+				?? throw new BadHttpRequestException("Error retrieving company users", 400);
+			model.Remove(currentUser);
 
-            if (!string.IsNullOrWhiteSpace(selectedRole))
-            {
-                if (await _roleService.RemoveUserFromRolesAsync(user,currentRoles))
-                {
-                    await _roleService.AddUserToRoleAsync(user, selectedRole);
-                }
-            }
+			return View(model);
+		}
 
-            return RedirectToAction(nameof(ManageUserRoles), viewModel);
-        }
-    }
+		[HttpPost, ValidateAntiForgeryToken, Authorize(Roles = nameof(BTRoles.Admin))]
+		public async Task<IActionResult> ManageUserRolesConfirmed(string userId, string? selected)
+		{
+			string? swalMessage = string.Empty;
+			BTUser? currentUser = await _userManager.GetUserAsync(User);
+			BTUser? userToEdit = await _companyService.GetCompanyUserByIdAsync(userId);
+
+			if (currentUser == userToEdit) throw new BadHttpRequestException("You cannot modify your own roles", 400);
+
+            IEnumerable<string>? currentRoles = await _roleService.GetUserRolesAsync(userToEdit);
+
+			if (string.IsNullOrWhiteSpace(selected)) throw new BadHttpRequestException("You must select a role for the user.", 400);
+
+			bool success = await _roleService.RemoveUserFromRolesAsync(userToEdit, currentRoles);
+			if (!success) throw new BadHttpRequestException("There was a problem removing the user's existing role.", 500);
+
+			success = await _roleService.AddUserToRoleAsync(userToEdit, selected);
+			if (!success) throw new BadHttpRequestException("The user's existing role was removed, but there was a problem adding the selected role.", 500);
+
+			swalMessage = "Success: User role changed.";
+			return RedirectToAction(nameof(CompanyUsers), new { incomingMessage = swalMessage });
+		}
+	}
 }

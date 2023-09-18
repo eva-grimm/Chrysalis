@@ -2,6 +2,7 @@
 using Chrysalis.Models;
 using Chrysalis.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chrysalis.Services
@@ -125,6 +126,13 @@ namespace Chrysalis.Services
             {
                 throw;
             }
+        }
+    
+        public async Task<MultiSelectList> GetUserRoleSelectListAsync(BTUser? user)
+        {
+            if (user == null) return new MultiSelectList(await GetRolesAsync(), "Name", "Name");
+            IEnumerable<string> currentRoles = await GetUserRolesAsync(user);
+            return new MultiSelectList(await GetRolesAsync(), "Name", "Name", currentRoles);
         }
     }
 }

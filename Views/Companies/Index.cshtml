@@ -1,53 +1,190 @@
-﻿@model IEnumerable<Chrysalis.Models.Company>
+﻿@using Chrysalis.Enums
+@using Microsoft.AspNetCore.Identity;
+
+@model Company
+@inject ICompanyService _CompanyService
+@inject IFileService _FileService
+@inject IProjectService _ProjectService
+@inject IRoleService _RoleService
+@inject UserManager<BTUser> _UserManager
+@inject IInviteService _InviteService
 
 @{
     ViewData["Title"] = "Index";
+    BTUser? currentUser = await _UserManager.GetUserAsync(User);
 }
-
-<h1>Index</h1>
-
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Name)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Description)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ImageData)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ImageType)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Description)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ImageData)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ImageType)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
+<div class="row ps-3">
+    <!--Start header-->
+    <div class="col-12 col-lg-6">
+        <div class="card custom-card hover-card overflow-hidden">
+            <div class="card-body ps-3">
+                <div class="row">
+                    <div class="col-12 col-md-4">
+                        <h3 class="fw-bold mb-3">@Model.Name</h3>
+                        <p class="d-block tx-12 mb-0 text-muted">
+                            @Model.Description
+                        </p>
+                    </div>
+                    <div class="col-12 col-md-8 text-end">
+                        <img class="company-header-img" alt="Company Image"
+                             src="@_FileService.ConvertByteArrayToFile(Model.ImageData,Model.ImageType,DefaultImage.CompanyImage)" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--End header-->
+    <!--Start projects-->
+    <div class="col-12">
+        <div class="d-flex flex-column flex-md-row pb-3">
+            <h3 class="fw-bold text-center text-md-justify">Projects</h3>
+        </div>
+        <div class="table-responsive border border-bottom-0">
+            <table class="table text-nowrap table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Project Manager</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Open Tickets</th>
+                        <th>Members</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (Project project in Model.Projects)
+                    {
+                        <tr>
+                            <td>@project.Name</td>
+                            <td>
+                                @if ((await _ProjectService.GetProjectManagerAsync(project.Id)) == null)
+                                {
+                                    <a class="btn btn-primary btn-sm" asp-controller="Projects" asp-action="AssignPM"
+                                       asp-route-projectId="@project.Id">Assign PM</a>
+                                }
+                                else
+                                {
+                                    <span>@((await _ProjectService.GetProjectManagerAsync(project.Id))?.FullName)</span>
+                                }
+                            </td>
+                            <td>@project.StartDate.ToString("MM.dd.yyyy")</td>
+                            <td>@project.EndDate.ToString("MM.dd.yyyy")</td>
+                            <td>@project.Tickets.Where(t => t.TicketStatus?.Name != BTTicketStatuses.Resolved.ToString()).Count()</td>
+                            <td>@project.Members.Count()</td>
+                            <td>
+                                <a asp-action="Details" asp-asp-controller="Projects" asp-route-id="@project.Id">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!--End projects-->
+    <!--Start members-->
+    <div class="col-12">
+        <div class="d-flex flex-column flex-md-row pb-3">
+            <h3 class="fw-bold text-center text-md-justify">Members</h3>
+            <div class="d-flex mx-auto">
+                <input id="cardFilter" type="search" class="form-control" placeholder="Filter" />
+            </div>
+            @if (await _RoleService.IsUserInRoleAsync(currentUser, nameof(BTRoles.Admin)))
+            {
+                <div class="ms-md-auto mt-3 mt-md-0 text-center">
+                    <a class="btn btn-secondary" asp-action="Create" asp-controller="Invites">Invite Member</a>
+                    <a class="btn btn-primary" asp-action="ManageUserRoles" asp-controller="Companies">Manage Roles</a>
+                </div>
+            }
+        </div>
+        <!--Start user cards-->
+        <div id="userCards" class="row">
+            @foreach (BTUser? user in await _CompanyService.GetCompanyUsersAsync(Model.Id))
+            {
+                <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                    <partial name="_UserPartial" model="user" />
+                </div>
+            }
+        </div>
+        <!--End role rows-->
+    </div>
+    <!--End members-->
+    <!--Start invites-->
+    @if (await _RoleService.IsUserInRoleAsync(currentUser, nameof(BTRoles.Admin)))
+    {
+        <div class="col-12">
+            <div class="d-flex flex-column flex-md-row pb-3">
+                <h3 class="fw-bold text-center text-md-justify">Pending Invites</h3>
+            </div>
+            <div class="table-responsive border border-bottom-0">
+                <table class="table text-nowrap table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Project</th>
+                            <th>Invite Date</th>
+                            <th>Expires</th>
+                            @if ((await _RoleService.GetUsersInRoleAsync(nameof(BTRoles.Admin), Model.Id)).Count() > 1)
+                            {
+                                <th>Invited By</th>
+                            }
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (Invite invite in await _InviteService.GetValidInvitesAsync(Model.Id))
+                        {
+                            <tr>
+                                <td>@invite.InviteeFirstName @invite.InviteeLastName</td>
+                                <td>@invite.InviteeEmail</td>
+                                <td>@invite.Project?.Name</td>
+                                <td>@invite.InviteDate</td>
+                                <td>
+                                    @if ((DateTime.Now - invite.InviteDate.ToLocalTime()).TotalDays <= 7)
+                                    {
+                                        @invite.InviteDate.AddDays(7)
+                                    }
+                                    else
+                                    {
+                                        <span>Expired</span>
+                                    }
+                                </td>
+                                @if ((await _RoleService.GetUsersInRoleAsync(nameof(BTRoles.Admin), Model.Id)).Count() > 1)
+                                {
+                                    <td>@invite.Invitor?.FullName</td>
+                                }
+                                <td>
+                                    <form asp-action="CancelInviteAsync" asp-controller="Invites" asp-route-inviteId="invite.Id">
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="bi bi-trash-fill"></i>
+                                        </button>
+                                    </form>
+                                    <form asp-action="RenewInviteAsync" asp-controller="Invites" asp-route-inviteId="invite.Id">
+                                        <button type="submit" class="btn btn-primary ps-3">
+                                            <i class="bi bi-rewind-circle-fill"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    <!--End invites-->
+</div>
+@section Scripts{
+    <!--Member button script-->
+    <script>
+        $(document).ready(function () {
+            $('#cardFilter').keyup(function () {
+                let searchString = $(this).val();
+                $(`#userCards > card:not( :contains(${searchString}))`).hide();
+            });
+        })
+    </script>
 }
-    </tbody>
-</table>

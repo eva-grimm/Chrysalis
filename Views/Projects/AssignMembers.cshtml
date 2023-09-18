@@ -6,77 +6,32 @@
     ViewData["Title"] = "Project Members";
 }
 
-<div>
-    <div class="container-fluid">
-        <form asp-action="Members">
-            <div class="row gy-2">
-                <div class="col-md-4 col mt-5 ">
-                    <div class="bg-secondary">
-                        <div class="card m-1 p-2">
-                            <div class="header">
-                                <h2>Project Team</h2>
-                                <hr />
-                            </div>
-                            <div class="body" style="overflow-y:auto;height:300px;">
-                                <ul class="right_chat list-unstyled mb-0">
-                                    @foreach (BTUser member in Model.Members)
-                                    {
-                                        <li>
-                                            @member.FullName
-                                            <span>
-                                                <img src="@_FileService.ConvertByteArrayToFile(
-                                                member.ImageData, member.ImageType, DefaultImage.BTUserImage)" />
-                                            </span>
-                                        </li>
-                                    }
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col mt-5 ">
-                    <div class="bg-secondary">
-                        <div class="card m-1 p-2">
-                            <div class="header">
-                                <h2>Add Members?</h2>
-                                <hr />
-                            </div>
-                            <div class="body" style="overflow-y:auto;height:300px;">
-                                <select name="selected" class="form-select" multiple
-                                        asp-items="ViewBag.NonMembers"
-                                        aria-label="Company Members Not on Project">
-                                </select>
-                                <div class="form-group">
-                                    <input type="submit" value="Add" class="btn btn-primary mt-3" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col mt-5 ">
-                    <div class="bg-secondary">
-                        <div class="card m-1 p-2">
-                            <div class="header">
-                                <h2>Remove Members?</h2>
-                                <hr />
-                            </div>
-                            <div class="body" style="overflow-y:auto;height:300px;">
-                                <select name="removed" class="form-select" multiple
-                                        asp-items="ViewBag.Members"
-                                        aria-label="Company Members on Project">
-                                </select>
-                                <div class="form-group">
-                                    <input type="submit" value="Remove" class="btn btn-primary mt-3" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </form>
+<form asp-action="AssignMembers">
+    <input type="hidden" name="projectId" value="@Model.Id" />
+    <div class="row gy-2">
+        <div class="col-12 col-md-4">
+            <h3>Current Team</h3>
+            @foreach (BTUser member in Model.Members)
+            {
+                <partial name="_UserPartial" model="member" />
+            }
+        </div>
+        <div class="col-12 col-md-4">
+            <h3>Change Developers?</h3>
+            <select class="form-control select2" multiple
+                    name="developers" asp-items="ViewBag.Developers">
+            </select>
+        </div>
+        <div class="col-12 col-md-4">
+            <h3>Change Submitters?</h3>
+            <select class="form-control select2" multiple
+                    name="submitters" asp-items="ViewBag.Submitters">
+            </select>
+        </div>
     </div>
-</div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
+    <div class="d-flex">
+        <button type="submit" class="btn btn-primary">Modify</button>
+        <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.Id"
+           class="btn btn-danger ms-3">Cancel</a>
+    </div>
+</form>

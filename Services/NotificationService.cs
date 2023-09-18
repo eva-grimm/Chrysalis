@@ -10,7 +10,7 @@ using System.Data;
 
 namespace Chrysalis.Services
 {
-    public class NotificiationService : INotificationService
+    public class NotificationService : INotificationService
     {
         private readonly ApplicationDbContext _context;
         private readonly IEmailSender _emailService;
@@ -18,7 +18,7 @@ namespace Chrysalis.Services
         private readonly IProjectService _projectService;
         private readonly UserManager<BTUser> _userManager;
 
-        public NotificiationService(ApplicationDbContext context,
+        public NotificationService(ApplicationDbContext context,
             IEmailSender emailService,
             IRoleService rolesService,
             UserManager<BTUser> userManager,
@@ -31,22 +31,23 @@ namespace Chrysalis.Services
             _projectService = projectService;
         }
 
-        public async Task AddNotificationAsync(Notification? notification)
+        public async Task<bool> AddNotificationAsync(Notification? notification)
         {
-            if (notification == null) return;
+            if (notification == null) return false;
 
             try
             {
                 _context.Add(notification);
                 await _context.SaveChangesAsync();
+                return true;
             }
             catch (Exception)
             {
-                throw;
+                return false;
             }
         }
 
-        public async Task<List<Notification>> GetNotificationsByUserIdAsync(string? userId)
+        public async Task<List<Notification>> GetUserNotificationsAsync(string? userId)
         {
             if (string.IsNullOrEmpty(userId)) return new List<Notification>();
 
@@ -66,10 +67,29 @@ namespace Chrysalis.Services
             }
         }
 
-        // need clarity
-        public async Task NotificationsByRoleAsync(int? companyId, Notification? notification, BTRoles role)
+        public async Task<List<Notification>> GetUnreadUserNotificationsAsync(string? userId)
         {
-            if (notification == null) return;
+            if (string.IsNullOrEmpty(userId)) return new List<Notification>();
+
+            try
+            {
+                List<Notification> notifications = await _context.Notifications
+                    .Where(n => n.RecipientId == userId && !n.HasBeenViewed)
+                    .Include(n => n.Recipient)
+                    .Include(n => n.Sender)
+                    .ToListAsync();
+
+                return notifications;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> NotificationsByRoleAsync(int? companyId, Notification? notification, BTRoles role)
+        {
+            if (notification == null) return false;
 
             try
             {
@@ -83,16 +103,13 @@ namespace Chrysalis.Services
                     notification.Id = 0;
                     notification.RecipientId = memberId;
 
-                    // Antonio's line, which makes no sense
-                    // because the Notification isn't being added to the DB
-                    //await _context.SaveChangesAsync();
-
                     await AddNotificationAsync(notification);
                 }
+                return true;
             }
             catch (Exception)
             {
-                throw;
+                return false;
             }
         }
 
@@ -134,7 +151,6 @@ namespace Chrysalis.Services
             }
         }
 
-        // need clarity
         public async Task<bool> NewTicketNotificationAsync(int? ticketId, string? senderId)
         {
             if (ticketId == null || string.IsNullOrEmpty(senderId)) return false;
@@ -154,7 +170,7 @@ namespace Chrysalis.Services
                     Message = $"New Ticket: {ticket.Title} was created by {user.FullName} ",
                     Created = DataUtility.GetPostGresDate(DateTime.Now),
                     SenderId = senderId,
-                    RecipientId = projectManager?.Id, // ?? senderId, TO-DO: WTF??
+                    RecipientId = projectManager?.Id,
                     NotificationType = new NotificationType()
                     {
                         Name = BTNotificationType.Ticket.ToString()
@@ -181,7 +197,6 @@ namespace Chrysalis.Services
             }
         }
 
-        // need clarity
         public async Task<bool> TicketUpdateNotificationAsync(int? ticketId, string? developerId, string? senderId = null)
         {
             if (ticketId == null || string.IsNullOrEmpty(senderId)) return false;
@@ -204,7 +219,7 @@ namespace Chrysalis.Services
                     Message = $"Ticket: {ticket?.Title} was updated by {user?.FullName}",
                     Created = DataUtility.GetPostGresDate(DateTime.Now),
                     SenderId = senderId,
-                    RecipientId = projectManager?.Id, // ?? senderId, TO-DO: WTF??
+                    RecipientId = projectManager?.Id,
                     NotificationType = new NotificationType()
                     {
                         Name = BTNotificationType.Ticket.ToString()

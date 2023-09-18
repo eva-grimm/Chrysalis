@@ -1,26 +1,48 @@
-﻿@using Chrysalis.Models.ViewModels
-@model AssignPMViewModel
+﻿@model Project
+@inject IProjectService _ProjectService
+@inject IRoleService _RoleService
 
 @{
     ViewData["Title"] = "Assign Project Manager";
 }
-<div class="d-flex justify-content-center mt-5 flex-column align-items-center">
-    <h3 class="my-5">Assign Project Manager</h3>
-    <div class="card">
-        <div class="card-header">
-            <div class="card-title">@Model.ProjectName</div>
+
+<div class="col-3">
+    <form asp-action="AssignPM" asp-controller="Projects" method="post" class="d-flex flex-column">
+        <h3>Change Project Manager?</h3>
+        <p class="fw-bold">Project: @Model.Name</p>
+        <input type="hidden" name="projectId" value="@Model.Id" />
+        <select asp-items="ViewBag.ProjectManagers" name="selectedPMId"
+                class="form-control select2">
+            <option value="">Unassigned</option>
+        </select>
+        <div class="d-flex align-items-center">
+            <button type="submit" class="btn btn-primary my-3">Save</button>
+            <a asp-action="Details" asp-route-id="@Model.Id"
+               class="btn btn-secondary ms-3">Cancel</a>
         </div>
-        <div class="card-body">
-            <form asp-action="AssignPM" asp-controller="Projects" method="post" class="d-flex flex-column">
-                <input type="hidden" asp-for="ProjectId" />
-                <select asp-items="Model.PMList" asp-for="PMId">
-                    <option value="">Unassigned</option>
-                </select>
-                <span asp-validation-for="PMId" class="text-danger"></span>
-                <button type="submit" class="btn btn-primary my-3">Save</button>
-                <a asp-action="Details" asp-route-id="@Model.ProjectId" class="btn btn-secondary">Cancel</a>
-                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-            </form>
-        </div>
-    </div>
+    </form>
 </div>
+
+@section Scripts {
+    <!--Sweet Alerts-->
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let message = '@(ViewBag.SwalMessage)';
+        if (!message.includes("Error") && message != '') {
+            Swal.fire({
+                backdrop: false,
+                icon: 'success',
+                title: message,
+                showConfirmButton: true
+            });
+        } else if (message.includes("Error")) {
+            Swal.fire({
+                backdrop: false,
+                icon: 'error',
+                title: 'Oops...',
+                text: message
+            });
+        }
+    </script>
+    <!--End Sweet Alerts-->
+}

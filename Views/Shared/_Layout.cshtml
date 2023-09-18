@@ -2,10 +2,16 @@
 @using Chrysalis.Enums
 @inject UserManager<BTUser> _UserManager
 @inject ICompanyService _CompanyService
+@inject INotificationService _NotificationService
 @inject IFileService _FileService
+@inject IRoleService _RoleService
 
 @{
     BTUser? currentUser = await _CompanyService.GetCompanyUserByIdAsync(_UserManager.GetUserId(User));
+    IEnumerable<string> userRoles = await _RoleService.GetUserRolesAsync(currentUser);
+    string userRole = userRoles.First();
+    List<Notification> notifications = await _NotificationService.GetUserNotificationsAsync(currentUser.Id);
+    List<Notification> unreadNotifications = await _NotificationService.GetUnreadUserNotificationsAsync(currentUser.Id);
 }
 
 <!DOCTYPE html>
@@ -19,6 +25,8 @@
 
     <!-- Bootstrap CSS -->
     <link id="style" href="~/assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    @*Figure out wtf is going on with icons*@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <!-- Icons CSS -->
     <link href="~/assets/plugins/web-fonts/icons.css" rel="stylesheet" />
@@ -33,6 +41,9 @@
 
     <!-- Mutipleselect CSS -->
     <link rel="stylesheet" href="~/assets/plugins/multipleselect/multiple-select.css" />
+
+    <!-- Rich Text Editor-->
+    <link rel="stylesheet" href="~/assets/plugins/wysiwyag/richtext.css">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="~/Chrysalis.styles.css" asp-append-version="true" />
@@ -107,7 +118,7 @@
                     <div class="navbar navbar-expand-lg  nav nav-item  navbar-nav-right responsive-navbar navbar-dark  ">
                         <div class="collapse navbar-collapse" id="navbarSupportedContent-4">
                             <div class="d-flex order-lg-2 ms-auto">
-                                <!-- Search -->
+                                <!-- Start Search -->
                                 <div class="dropdown header-search">
                                     <a class="nav-link icon header-search">
                                         <i class="fe fe-search header-icons"></i>
@@ -151,8 +162,8 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Search -->
-                                <!-- Theme-Layout -->
+                                <!-- End Search -->
+                                <!-- Start Theme-Layout -->
                                 <div class="dropdown d-flex main-header-theme">
                                     <a class="nav-link icon layout-setting">
                                         <span class="dark-layout">
@@ -163,76 +174,97 @@
                                         </span>
                                     </a>
                                 </div>
-                                <!-- Theme-Layout -->
-                                <!-- Full screen -->
+                                <!-- End Theme-Layout -->
+                                <!-- Start Full screen -->
                                 <div class="dropdown ">
                                     <a class="nav-link icon full-screen-link">
                                         <i class="fe fe-maximize fullscreen-button fullscreen header-icons"></i>
                                         <i class="fe fe-minimize fullscreen-button exit-fullscreen header-icons"></i>
                                     </a>
                                 </div>
-                                <!-- Full screen -->
-                                <!-- Notification -->
+                                <!-- End Full screen -->
+                                <!-- Start Notification -->
                                 <div class="dropdown main-header-notification">
                                     <a class="nav-link icon" href="javascript:void(0)">
                                         <i class="fe fe-bell header-icons"></i>
-                                        <span class="badge bg-danger nav-link-badge">4</span>
+                                        @if (unreadNotifications.Count() > 0)
+                                        {
+                                            <span class="badge bg-danger nav-link-badge">@unreadNotifications.Count()</span>
+                                        }
                                     </a>
                                     <div class="dropdown-menu">
                                         <div class="header-navheading">
-                                            <p class="main-notification-text">
-                                                You have 1 unread notification<span class="badge bg-pill bg-primary ms-3">View all</span>
-                                            </p>
+                                            <!-- Unread notifications -->
+                                            @if (@unreadNotifications.Count() == 0)
+                                            {
+                                                <p class="main-notification-text">
+                                                    You have 0 unread notifications
+                                                </p>
+                                            }
+                                            else if (@unreadNotifications.Count() == 1)
+                                            {
+                                                <p class="main-notification-text">
+                                                    You have 1 unread notification
+                                                    <!-- TO-DO: implement viewing unread notifications -->
+                                                    <span class="badge bg-pill bg-primary ms-3">View</span>
+                                                </p>
+                                            }
+                                            else
+                                            {
+                                                <p class="main-notification-text">
+                                                    You have @unreadNotifications.Count() unread notifications
+                                                    <!-- TO-DO: implement viewing unread notifications -->
+                                                    <span class="badge bg-pill bg-primary ms-3">View all</span>
+                                                </p>
+                                            }
                                         </div>
                                         <div class="main-notification-list">
-                                            <div class="media new">
-                                                <div class="main-img-user online">
-                                                    <img alt="avatar"
-                                                         src="~/assets/img/users/5.jpg">
-                                                </div>
-                                                <div class="media-body">
-                                                    <p>
-                                                        Congratulate <strong>Olivia James</strong> for New template
-                                                        start
-                                                    </p>
-                                                    <span>Oct 15 12:32pm</span>
-                                                </div>
-                                            </div>
-                                            <div class="media">
-                                                <div class="main-img-user">
-                                                    <img alt="avatar"
-                                                         src="~/assets/img/users/2.jpg">
-                                                </div>
-                                                <div class="media-body">
-                                                    <p><strong>Joshua Gray</strong> New Message Received</p>
-                                                    <span>
-                                                        Oct 13
-                                                        02:56am
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div class="media">
-                                                <div class="main-img-user online">
-                                                    <img alt="avatar"
-                                                         src="~/assets/img/users/3.jpg">
-                                                </div>
-                                                <div class="media-body">
-                                                    <p>
-                                                        <strong>Elizabeth Lewis</strong> added new schedule realease
-                                                    </p><span>
-                                                        Oct
-                                                        12 10:40pm
-                                                    </span>
-                                                </div>
-                                            </div>
+                                            @foreach (Notification notification in notifications)
+                                            {
+                                                @if (notification.HasBeenViewed)
+                                                {
+                                                    <div class="media">
+                                                        <!-- TO-DO: Implement showing user online? class="main-img-user online" -->
+                                                        <div class="main-img-user">
+                                                            <img alt="avatar"
+                                                                 src="@_FileService.ConvertByteArrayToFile(
+                                                                    notification.Sender?.ImageData,
+                                                                    notification.Sender?.ImageType,
+                                                                    DefaultImage.BTUserImage)">
+                                                        </div>
+                                                        <div class="media-body">
+                                                            <p>@notification.Message</p>
+                                                            <span>@notification.Created.ToLocalTime().ToString("MM.dd.yy") </span>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="media new">
+                                                        <!-- TO-DO: Implement showing user online? class="main-img-user online" -->
+                                                        <div class="main-img-user">
+                                                            <img alt="avatar"
+                                                                 src="@_FileService.ConvertByteArrayToFile(
+                                                                    notification.Sender?.ImageData,
+                                                                    notification.Sender?.ImageType,
+                                                                    DefaultImage.BTUserImage)">
+                                                        </div>
+                                                        <div class="media-body">
+                                                            <p>@notification.Message</p>
+                                                            <span>@notification.Created.ToLocalTime().ToString("MM.dd.yy") </span>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            }
                                         </div>
                                         <div class="dropdown-footer">
+                                            <!-- TO-DO: implement showing all notifications -->
                                             <a href="javascript:void(0)">View All Notifications</a>
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Notification -->
-                                <!-- Profile -->
+                                <!-- End Notification -->
+                                <!-- Start Profile -->
                                 <div class="dropdown main-profile-menu">
                                     <a class="d-flex" href="javascript:void(0)">
                                         <span class="main-img-user">
@@ -269,7 +301,7 @@
                                         </a>
                                     </div>
                                 </div>
-                                <!-- Profile -->
+                                <!-- End Profile -->
                             </div>
                         </div>
                     </div>
@@ -302,24 +334,6 @@
                                     <span class="sidemenu-label">Dashboard</span>
                                 </a>
                             </li>
-                            <li class="nav-header"><span class="nav-label">Projects</span></li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Projects" asp-action="Index">
-                                    <span class="shape1"></span>
-                                    <span class="shape2"></span>
-                                    <i class="ti-home sidemenu-icon menu-icon "></i>
-                                    <span class="sidemenu-label">Projects</span>
-                                </a>
-                            </li>
-                            <li class="nav-header"><span class="nav-label">Tickets</span></li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Tickets" asp-action="Index">
-                                    <span class="shape1"></span>
-                                    <span class="shape2"></span>
-                                    <i class="ti-home sidemenu-icon menu-icon "></i>
-                                    <span class="sidemenu-label">Tickets</span>
-                                </a>
-                            </li>
                             <li class="nav-header"><span class="nav-label">Company</span></li>
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Companies" asp-action="Index">
@@ -329,6 +343,52 @@
                                     <span class="sidemenu-label">Company</span>
                                 </a>
                             </li>
+                            <li class="nav-header"><span class="nav-label">Projects</span></li>
+                            @if (userRole.Equals(nameof(BTRoles.Admin)))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link with-sub" href="javascript:void(0)">
+                                        <span class="shape1"></span>
+                                        <span class="shape2"></span>
+                                        <i class="ti-home sidemenu-icon menu-icon "></i>
+                                        <span class="sidemenu-label">Projects</span>
+                                        <i class="angle fe fe-chevron-right"></i>
+                                    </a>
+                                    <ul class="nav-sub">
+                                        <li class="side-menu-label1"><a href="javascript:void(0)">Projects</a></li>
+                                        <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Projects" asp-action="AllProjects">All Projects</a></li>
+                                        <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Projects" asp-action="UnassignedProjects">Unassigned Projects</a></li>
+                                        <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Projects" asp-action="ArchivedProjects">Archived Projects</a></li>
+                                    </ul>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item"><a class="nav-link" asp-controller="Projects" asp-action="MyProjects">Projects</a></li>
+                            }
+                            <li class="nav-header"><span class="nav-label">Tickets</span></li>
+                            @if (userRole.Equals(nameof(BTRoles.Admin)))
+                            {
+                            <li class="nav-item">
+                                <a class="nav-link with-sub" href="javascript:void(0)">
+                                    <span class="shape1"></span>
+                                    <span class="shape2"></span>
+                                    <i class="ti-home sidemenu-icon menu-icon "></i>
+                                    <span class="sidemenu-label">Tickets</span>
+                                    <i class="angle fe fe-chevron-right"></i>
+                                </a>
+                                <ul class="nav-sub">
+                                    <li class="side-menu-label1"><a href="javascript:void(0)">Tickets</a></li>
+                                    <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="AllTickets">All Tickets</a></li>
+                                    <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="UnassignedTickets">Unassigned Tickets</a></li>
+                                    <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="ArchivedTickets">Archived Tickets</a></li>
+                                </ul>
+                            </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item"><a class="nav-link" asp-controller="Tickets" asp-action="MyTickets">Tickets</a></li>
+                            }
                             <li class="nav-header"><span class="nav-label">Forms &amp; Charts</span></li>
                             <li class="nav-item">
                                 <a class="nav-link with-sub" href="javascript:void(0)">
@@ -435,6 +495,10 @@
 
     <!-- Sticky js -->
     <script src="~/assets/js/sticky.js"></script>
+
+    <!-- Rich Text Editor JS -->
+    <script src="~/assets/plugins/wysiwyag/jquery.richtext.js"></script>
+    <script src="~/assets/plugins/wysiwyag/wysiwyag.js"></script>
 
     <!-- Spruha Custom js -->
     <script src="~/assets/js/custom.js"></script>

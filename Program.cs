@@ -30,7 +30,12 @@ builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<ITicketHistoryService, TicketHistoryService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IEmailSender, EmailService>();
+builder.Services.AddScoped<IInviteService, InviteService>();
+
+// populate email settings
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
 // custom role policies
 builder.Services.AddAuthorization(options =>

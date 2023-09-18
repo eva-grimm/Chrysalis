@@ -21,10 +21,12 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Chrysalis.Data;
 using Chrysalis.Enums;
+using Chrysalis.Services.Interfaces;
+using System.ComponentModel.Design;
 
 namespace Chrysalis.Areas.Identity.Pages.Account
 {
-    public class RegisterModel : PageModel
+    public class RegisterByInviteModel : PageModel
     {
         private readonly SignInManager<BTUser> _signInManager;
         private readonly UserManager<BTUser> _userManager;
@@ -32,15 +34,17 @@ namespace Chrysalis.Areas.Identity.Pages.Account
         private readonly IUserEmailStore<BTUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
-        private readonly ApplicationDbContext _context;
+        private readonly IProjectService _projectService;
+        private readonly IInviteService _inviteService;
 
-        public RegisterModel(
+        public RegisterByInviteModel(
             UserManager<BTUser> userManager,
             IUserStore<BTUser> userStore,
             SignInManager<BTUser> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender,
-            ApplicationDbContext context)
+        IEmailSender emailSender,
+            IProjectService projectService,
+            IInviteService inviteService)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -48,7 +52,8 @@ namespace Chrysalis.Areas.Identity.Pages.Account
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
-            _context = context;
+            _projectService = projectService;
+            _inviteService = inviteService;
         }
 
         /// <summary>
@@ -56,7 +61,7 @@ namespace Chrysalis.Areas.Identity.Pages.Account
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         [BindProperty]
-        public InputModel Input { get; set; }
+        public InputModel Input { get; set; } = new();
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -76,50 +81,95 @@ namespace Chrysalis.Areas.Identity.Pages.Account
         /// </summary>
         public class InputModel
         {
-            [Required, Display(Name = "First Name")]
-            [StringLength(50, ErrorMessage = "The {0} must be at least {2} and max {1} characters long", MinimumLength = 2)]
-            public string FirstName { get; set; }
-
-            [Required, Display(Name = "Last Name")]
-            [StringLength(50, ErrorMessage = "The {0} must be at least {2} and max {1} characters long", MinimumLength = 2)]
-            public string LastName { get; set; }
-
-            [Required, Display(Name = "Company Name")]
-            public string CompanyName { get; set; }
-
-            [Required, Display(Name = "Company Description")]
-            public string CompanyDescription { get; set; }
+            /// <summary>
+            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
+            ///     directly from your code. This API may change or be removed in future releases.
+            /// </summary>
+            [Display(Name = "Company")]
+            public string Company { get; set; }
 
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required,EmailAddress,Display(Name = "Email")]
+            [Required]
+            [Display(Name = "Company Id")]
+            public int CompanyId { get; set; }
+
+            [Required]
+            public int InviteId { get; set; }
+
+            /// <summary>
+            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
+            ///     directly from your code. This API may change or be removed in future releases.
+            /// </summary>
+            [Required]
+            [Display(Name = "Project Id")]
+            public int ProjectId { get; set; }
+
+
+            /// <summary>
+            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
+            ///     directly from your code. This API may change or be removed in future releases.
+            /// </summary>
+            [Required]
+            [Display(Name = "First Name")]
+            public string FirstName { get; set; }
+
+
+            /// <summary>
+            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
+            ///     directly from your code. This API may change or be removed in future releases.
+            /// </summary>
+            [Required]
+            [Display(Name = "Last Name")]
+            public string LastName { get; set; }
+
+            /// <summary>
+            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
+            ///     directly from your code. This API may change or be removed in future releases.
+            /// </summary>
+            [Required]
+            [EmailAddress]
+            [Display(Name = "Email")]
             public string Email { get; set; }
 
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required,DataType(DataType.Password),Display(Name = "Password")]
+            [Required]
             [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
-            
+            [DataType(DataType.Password)]
+            [Display(Name = "Password")]
             public string Password { get; set; }
 
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [DataType(DataType.Password),Display(Name = "Confirm password")]
+            [DataType(DataType.Password)]
+            [Display(Name = "Confirm password")]
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
         }
 
-
-        public async Task OnGetAsync(string returnUrl = null)
+        public async Task OnGetAsync(int id, int companyId, string returnUrl = null)
         {
             ReturnUrl = returnUrl;
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
+            //Use "id" to find the invite
+            Invite invite = await _inviteService.GetInviteAsync(id, companyId);
+
+            //Load InputModel with the Invite information
+            Input.Email = invite.InviteeEmail;
+            Input.FirstName = invite.InviteeFirstName;
+            Input.LastName = invite.InviteeLastName;
+            Input.Company = invite.Company.Name;
+            Input.CompanyId = invite.CompanyId;
+            Input.ProjectId = invite.ProjectId.Value;
+            Input.InviteId = id;
         }
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
@@ -128,32 +178,23 @@ namespace Chrysalis.Areas.Identity.Pages.Account
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
-                Company company = new()
-                {
-                    Name = Input.CompanyName,
-                    Description = Input.CompanyDescription
-                };
-                await _context.AddAsync(company);
-                await _context.SaveChangesAsync();
-
-                var user = CreateUser();
-
-                user.FirstName = Input.FirstName;
-                user.LastName = Input.LastName;
-                user.CompanyId = company.Id;
+                var user = CreateUser(Input.CompanyId);
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-
                 var result = await _userManager.CreateAsync(user, Input.Password);
+
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
 
-                    // first user must have role of company admin
-                    await _userManager.AddToRoleAsync(user, nameof(BTRoles.Admin));
-
                     var userId = await _userManager.GetUserIdAsync(user);
+                    // Add new user to the designated project
+                    await _projectService.AddMemberToProjectAsync(user, Input.ProjectId);
+
+                    // Add user to default role
+                    await _userManager.AddToRoleAsync(user, nameof(BTRoles.Submitter));
+
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                     var callbackUrl = Url.Page(
@@ -164,6 +205,10 @@ namespace Chrysalis.Areas.Identity.Pages.Account
 
                     await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
                         $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+
+                    Invite invite = await _inviteService.GetInviteAsync(Input.InviteId, Input.CompanyId);
+                    bool success = await _inviteService.AcceptInviteAsync(invite.CompanyToken, userId, Input.CompanyId);
+                    if (!success) return RedirectToPage("RegisterByInvite", new { id = Input.InviteId, companyId = Input.CompanyId });
 
                     if (_userManager.Options.SignIn.RequireConfirmedAccount)
                     {
@@ -185,11 +230,16 @@ namespace Chrysalis.Areas.Identity.Pages.Account
             return Page();
         }
 
-        private BTUser CreateUser()
+        private BTUser CreateUser(int companyId)
         {
             try
             {
-                return Activator.CreateInstance<BTUser>();
+                BTUser btUser = Activator.CreateInstance<BTUser>();
+                btUser.FirstName = Input.FirstName;
+                btUser.LastName = Input.LastName;
+                btUser.CompanyId = companyId;
+
+                return btUser;
             }
             catch
             {

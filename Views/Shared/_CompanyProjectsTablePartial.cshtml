@@ -1,0 +1,121 @@
+﻿@using Microsoft.AspNetCore.Identity;
+@model IEnumerable<Project>
+@inject IProjectService _ProjectService
+@inject UserManager<BTUser> _UserManager
+@inject IRoleService _RoleService
+@{
+    BTUser? currentUser = await _UserManager.GetUserAsync(User);
+    bool userIsAdmin = await _RoleService.IsUserInRoleAsync(currentUser, nameof(BTRoles.Admin));
+}
+
+<div class="table-responsive border border-bottom-0">
+    <table class="table text-nowrap table-hover">
+        <thead>
+            <tr>
+                <th>
+                    Project
+                </th>
+                <th>
+                    End Date
+                </th>
+                <th>
+                    Progress
+                </th>
+                <th>
+                    Project Manager
+                </th>
+                <th>
+                    Status
+                </th>
+                <th>
+                    Actions
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (Project? project in Model)
+            {
+                <tr>
+                    <td>
+                        <b>@project.Name</b><br />
+                        <small>Created: @project.Created.ToLocalTime().ToString("MMM dd yyyy")</small>
+                    </td>
+                    <td>
+                        @project.EndDate.ToLocalTime().ToString("MMM dd yyyy")<br />
+                        <small>Priority: <span class="badge bg-danger">@project.ProjectPriority?.Name</span></small>
+                    </td>
+                    <td>
+                        <div class="progress">
+                            @{
+                                DateTime today = DateTime.Now;
+                                double percent = today >= project.EndDate ? 100
+                                : today < project.StartDate ? 0
+                                : Math.Round((today.Subtract(project.StartDate)) / (project.EndDate.Subtract(project.StartDate)) * 100);
+                                percent = percent > 1 ? percent : 1;
+                                double width = percent >= 20 ? percent : 20;
+
+                                <div class="progress-bar" role="progressbar" aria-valuenow="@percent"
+                                     aria-valuemin="0" aria-valuemax="100" style="width:@width%;">
+                                    <span class="progress-value">@percent%</span>
+                                </div>
+                            }
+                        </div>
+                    </td>
+                    <td>
+                        @if (await _ProjectService.GetProjectManagerAsync(project.Id) == null
+                       && userIsAdmin)
+                        {
+                            <a asp-action="AssignPM" asp-controller="Projects"
+                               asp-route-projectId="@project.Id" class="badge bg-secondary">
+                                Assign PM
+                            </a>
+                        }
+                        else
+                        {
+                            <p>
+                                @((await _ProjectService.GetProjectManagerAsync(project.Id))?.FullName)
+                            </p>
+                        }
+                    </td>
+                    <td>
+                        @if (!project.Archived)
+                        {
+                            <p class="badge bg-primary">Active</p>
+                        }
+                        else
+                        {
+                            <p class="badge bg-primary">Inactive</p>
+                        }
+                    </td>
+                    <td class="d-flex">
+                        <a asp-action="Details" asp-controller="Projects" 
+                        asp-route-id="@project.Id" class="badge bg-info">
+                            <i class="bi bi-eye-fill"></i>
+                        </a>
+                        @if (userIsAdmin)
+                        {
+                            <a asp-action="Edit" asp-controller="Projects" 
+                            asp-route-id="@project.Id" class="badge bg-secondary ms-3">
+                                <i class="bi bi-pencil-fill"></i>
+                            </a>
+                            @if (!project.Archived)
+                            {
+                                <a asp-action="ConfirmArchive" asp-controller="Projects"
+                                    asp-route-projectId="@project.Id" class="badge bg-danger ms-3">
+                                    <i class="bi bi-archive-fill"></i>
+                                </a>
+                            }
+                            else
+                            {
+                                <a asp-action="ConfirmUnarchive" asp-controller="Projects"
+                                    asp-route-projectId="@project.Id" class="badge bg-danger ms-3">
+                                    <i class="bi bi-archive-fill"></i>
+                                </a>
+                            }
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

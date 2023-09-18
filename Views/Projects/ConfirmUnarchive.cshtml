@@ -57,7 +57,7 @@
                         Members: @Model.Members.Count()
                     </li>
                     <li>
-                        Tickets that will be active: @Model.Tickets.Where(t => t.TicketStatusId != (int)BTTicketStatuses.Resolved).Count()
+                        Tickets that will become active: @Model.Tickets.Where(t => t.TicketStatusId != (int)BTTicketStatuses.Resolved).Count()
                     </li>
                 </ul>
             </div>

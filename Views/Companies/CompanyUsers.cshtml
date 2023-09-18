@@ -1,0 +1,71 @@
+﻿@using Microsoft.AspNetCore.Identity
+@model IEnumerable<BTUser>
+@inject UserManager<BTUser> _UserManager
+@inject IFileService _FileService
+
+@{
+    ViewBag.Title = "Company Users";
+    BTUser? currentUser = await _UserManager.GetUserAsync(User);
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Avatar
+            </th>
+            <th>
+                User
+            </th>
+            <th>
+                Actions
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (BTUser? user in Model)
+        {
+            <tr>
+                <td>
+                    <img class="main-img-user" alt="User Avatar"
+                         src="@_FileService.ConvertByteArrayToFile(
+                        user.ImageData,user.ImageType,DefaultImage.BTUserImage)" />
+                </td>
+                <td>
+                    <b>@user.FullName</b><br />
+                </td>
+                <td>
+                    <a class="btn btn-primary btn-sm" asp-action="Details" asp-route-id="@user.Id">Profile</a>
+                    @if (user != currentUser)
+                    {
+                        <a class="btn btn-secondary btn-sm ms-3" asp-action="ManageUserRoles" asp-route-userId="@user.Id">Manage Roles</a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <!--Sweet Alerts-->
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let message = '@(ViewBag.SwalMessage)';
+        if (!message.includes("Error") && message != '') {
+            Swal.fire({
+                backdrop: false,
+                icon: 'success',
+                title: message,
+                showConfirmButton: true
+            });
+        } else if (message.includes("Error")) {
+            Swal.fire({
+                backdrop: false,
+                icon: 'error',
+                title: 'Oops...',
+                text: message
+            });
+        }
+    </script>
+    <!--End Sweet Alerts-->
+}

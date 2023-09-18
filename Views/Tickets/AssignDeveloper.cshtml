@@ -1,0 +1,26 @@
+﻿@model Ticket
+
+@{
+    ViewBag.Title = "Assign Developer";
+}
+
+<div class="row">
+    <div class="col-12 col-md-6">
+        <form asp-action="AssignDeveloper" asp-controller="Tickets">
+            <select name="selected" asp-items="ViewBag.Developers"></select>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <a class="btn btn-secondary" asp-action="Details" asp-route-id="Model.Id">Cancel</a>
+            </div>
+        </form>
+    </div>
+    <div class="col-12 col-md-6">
+        <partial name="_UserPartial" model="Model.DeveloperUser" />
+    </div>
+    <div class="col-12 col-md-6">
+        <partial name="_ProjectDetailsPartial" model="Model.Project" />
+    </div>
+    <div class="col-12 col-md-6">
+        <partial name="_TicketDetailsPartial" model="Model.Project" />
+    </div>
+</div>

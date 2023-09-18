@@ -1,5 +1,6 @@
 ﻿using Chrysalis.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Chrysalis.Services.Interfaces
 {
@@ -12,5 +13,6 @@ namespace Chrysalis.Services.Interfaces
         public Task<bool> IsUserInRoleAsync(BTUser? member, string? roleName);
         public Task<bool> RemoveUserFromRoleAsync(BTUser? user, string? roleName);
         public Task<bool> RemoveUserFromRolesAsync(BTUser? user, IEnumerable<string>? roleNames);
+        public Task<MultiSelectList> GetUserRoleSelectListAsync(BTUser? user);
     }
 }

@@ -24,6 +24,22 @@ namespace Chrysalis.Services
             return (_context.Companies?.Any(e => e.Id == companyId)).GetValueOrDefault();
         }
 
+        public async Task<bool> UpdateCompanyAsync(Company? company)
+        {
+            if (company == null) return false;
+
+            try
+            {
+                _context.Update(company);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         /// <summary>
         /// Returns the Company whose ID matches companyId
         /// </summary>
@@ -60,10 +76,10 @@ namespace Chrysalis.Services
         /// Returns all employees of the current user's company.
         /// </summary>
         /// <param name="companyId">Current User's CompanyID</param>
-        public async Task<List<BTUser>> GetAllCompanyUsersAsync(int? companyId)
+        public async Task<List<BTUser>> GetCompanyUsersAsync(int? companyId)
         {
             return await _context.Users
-                .Where(bt => bt.CompanyId == companyId)
+                .Where(u => u.CompanyId == companyId)
                 .ToListAsync();
         }
         
@@ -71,7 +87,7 @@ namespace Chrysalis.Services
         /// Returns all invites for the current user's company.
         /// </summary>
         /// <param name="companyId">Current User's CompanyID</param>
-        public async Task<IEnumerable<Invite>> GetAllCompanyInvitesAsync(int? companyId)
+        public async Task<IEnumerable<Invite>> GetCompanyInvitesAsync(int? companyId)
         {
             return await _context.Invites
                 .Where(i => i.CompanyId == companyId)

@@ -4,6 +4,7 @@ using Chrysalis.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Chrysalis.Enums;
+using System.Collections.Generic;
 
 namespace Chrysalis.Services
 {
@@ -22,34 +23,24 @@ namespace Chrysalis.Services
             _roleService = roleService;
         }
 
-        /// <summary>
-        /// Provides a bool indicating whether a project exists that
-        /// matches the provided ID.
-        /// </summary>
-        /// <param name="id">Potential ID of a Project</param>
-        /// <returns>#</returns>
         public bool ProjectExists(int? id)
         {
             return _context.Projects.Any(p => p.Id == id);
         }
 
-        /// <summary>
-        /// Adds provided project to the database.
-        /// </summary>
-        /// <param name="project">Project to be added</param>
-        /// <returns>#</returns>
-        public async Task AddProjectAsync(Project? project)
+        public async Task<bool> AddProjectAsync(Project? project)
         {
-            if (project == null) return;
+            if (project == null) return true;
 
             try
             {
                 _context.Add(project);
                 await _context.SaveChangesAsync();
+                return true;
             }
             catch (Exception)
             {
-                throw;
+                return false; ;
             }
         }
 
@@ -70,21 +61,46 @@ namespace Chrysalis.Services
             }
         }
 
-        public async Task<IEnumerable<Project>> GetCompanyProjectsAsync(int? companyId)
+        public async Task<IEnumerable<Project>> GetProjectsAsync(int? companyId)
         {
             return await _context.Projects
+                .Where(p => p.CompanyId == companyId)
+                .Include(p => p.Members)
+                .Include(p => p.Tickets)
+                .Include(p => p.ProjectPriority)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Project>> GetUnassignedProjectsAsync(int? companyId)
+        {
+            List<Project> projects = await _context.Projects
                                 .Where(p => p.CompanyId == companyId)
+                                .Include(p => p.Members)
+                                .Include(p => p.Tickets)
+                                .ToListAsync();
+
+            List<Project> unassignedProjects = new();
+
+            foreach (Project project in projects)
+            {
+                BTUser? pm = await GetProjectManagerAsync(project.Id);
+                if (pm == null) unassignedProjects.Add(project);
+            }
+
+            return unassignedProjects;
+        }
+
+        public async Task<IEnumerable<Project>> GetArchivedProjectsAsync(int? companyId)
+        {
+            return await _context.Projects
+                                .Where(p => p.CompanyId == companyId
+                                && p.Archived)
+                                .Include(p => p.Members)
+                                .Include(p => p.Tickets)
                                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Returns the Project that matches the ID provide, but only
-        /// if the current user belongs to the same company as the project.
-        /// </summary>
-        /// <param name="projectId">ID of the Project to be retrieved</param>
-        /// <param name="companyId">Current User's CompanyID</param>
-        /// <returns>Null if no matching Project found</returns>
-        public async Task<Project?> GetSingleCompanyProjectAsync(int? projectId, int? companyId)
+        public async Task<Project?> GetProjectAsync(int? projectId, int? companyId)
         {
             if (projectId == null) return new Project();
 
@@ -100,7 +116,9 @@ namespace Chrysalis.Services
                     .Include(p => p.Tickets)
                         .ThenInclude(t => t.Attachments)
                     .Include(p => p.Tickets)
-                        .ThenInclude(t => t.History)
+                        .ThenInclude(t => t.TicketStatus)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketPriority)
                     .Include(p => p.ProjectPriority)
                     .FirstOrDefaultAsync(p => p.Id == projectId);
                 return project;
@@ -127,7 +145,9 @@ namespace Chrysalis.Services
                     .Include(p => p.Tickets)
                         .ThenInclude(t => t.Attachments)
                     .Include(p => p.Tickets)
-                        .ThenInclude(t => t.History)
+                        .ThenInclude(t => t.TicketStatus)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketPriority)
                     .Include(p => p.ProjectPriority)
                     .AsNoTracking()
                     .FirstOrDefaultAsync(p => p.Id == projectId);
@@ -139,7 +159,7 @@ namespace Chrysalis.Services
             }
         }
 
-        public async Task<IEnumerable<BTUser>> GetCompanyMembersNotOnProject(int? projectId, int? companyId)
+        public async Task<IEnumerable<BTUser>> GetMembersNotOnProjectAsync(int? projectId, int? companyId)
         {
             if (projectId == null) return Enumerable.Empty<BTUser>();
 
@@ -151,17 +171,12 @@ namespace Chrysalis.Services
             //Project? project = await GetSingleCompanyProjectAsync(projectId, companyId);
             //if (project == null) return Enumerable.Empty<BTUser>();
             //ICollection<BTUser> projectUsers = project.Members;
-            ICollection<BTUser> projectUsers = (await GetSingleCompanyProjectAsync(projectId, companyId))!.Members;
+            ICollection<BTUser> projectUsers = (await GetProjectAsync(projectId, companyId))!.Members;
 
             return companyUsers.Except(projectUsers).ToList();
         }
 
-        /// <summary>
-        /// Gets the ProjectPriority that matches the ID provided.
-        /// </summary>
-        /// <param name="projectPriorityId">ID of the desired ProjectPriority</param>
-        /// <returns>Null if no matching ProjectPriority found</returns>
-        public async Task<ProjectPriority?> GetSingleProjectPriorityAsync(int? projectPriorityId)
+        public async Task<ProjectPriority?> GetProjectPriorityByIdAsync(int? projectPriorityId)
         {
             if (projectPriorityId == null) return new ProjectPriority();
 
@@ -178,10 +193,7 @@ namespace Chrysalis.Services
             }
         }
 
-        /// <summary>
-        /// Returns all ProjectPriorities
-        /// </summary>
-        public async Task<IEnumerable<ProjectPriority>> GetAllProjectPrioritiesAsync()
+        public async Task<IEnumerable<ProjectPriority>> GetProjectPrioritiesAsync()
         {
             return await _context.ProjectPriorities.ToListAsync();
         }
@@ -210,6 +222,34 @@ namespace Chrysalis.Services
             catch (Exception)
             {
                 throw;
+            }
+        }
+
+        public async Task<IEnumerable<BTUser>> GetProjectDevelopersAsync(int? projectId)
+        {
+            try
+            {
+                Project? project = await _context.Projects
+                    .Include(p => p.Members)
+                    .FirstOrDefaultAsync(p => p.Id == projectId);
+
+                List<BTUser> projectDevelopers = new();
+
+                if (project != null)
+                {
+                    foreach (BTUser member in project.Members)
+                    {
+                        if (await _roleService.IsUserInRoleAsync(member, nameof(BTRoles.Developer)))
+                        {
+                            projectDevelopers.Add(member);
+                        }
+                    }
+                }
+                return projectDevelopers;
+            }
+            catch (Exception)
+            {
+                return new List<BTUser>();
             }
         }
 
@@ -318,9 +358,27 @@ namespace Chrysalis.Services
             }
         }
 
+        public async Task<bool> RemoveProjectMembersAsync(int? projectId, int? companyId)
+        {
+            if (projectId == null) return false;
+
+            try
+            {
+                Project? project = await GetProjectAsync(projectId, companyId);
+                if (project == null) return false;
+                project.Members.Clear();
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         public async Task<bool> ArchiveProjectAsync(int? projectId, int? companyId)
         {
-            Project? project = await GetSingleCompanyProjectAsync(projectId, companyId);
+            Project? project = await GetProjectAsync(projectId, companyId);
             if (project == null) return false;
 
             try
@@ -344,7 +402,7 @@ namespace Chrysalis.Services
 
         public async Task<bool> UnarchiveProjectAsync(int? projectId, int? companyId)
         {
-            Project? project = await GetSingleCompanyProjectAsync(projectId, companyId);
+            Project? project = await GetProjectAsync(projectId, companyId);
             if (project == null) return false;
 
             try

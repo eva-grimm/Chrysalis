@@ -73,7 +73,6 @@ namespace Chrysalis.Data
 
         }
 
-
         public static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
         {
             //Seed Roles

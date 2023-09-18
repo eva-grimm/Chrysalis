@@ -72,7 +72,8 @@
                         <div class="d-flex order-lg-2 ms-auto">
                             <!-- Identity -->
                             <div class="header-nav-right p-3">
-                                <a href="#" class="btn ripple btn-min w-sm btn-outline-primary me-2">
+                                <a class="btn ripple btn-min w-sm btn-outline-primary me-2"
+                                    asp-area="Identity" asp-page="/Account/Register" asp-route-returnUrl="~/home/index">
                                     Register
                                 </a>
                                 <a class="btn ripple btn-min w-sm btn-primary me-2"
@@ -154,7 +155,8 @@
                                 </svg>
                             </div>
                             <div class="header-nav-right d-none d-lg-block">
-                                <a href="#" class="btn ripple btn-min w-sm btn-secondary me-2">
+                                <a class="btn ripple btn-min w-sm btn-secondary me-2"
+                                   asp-area="Identity" asp-page="/Account/Register" asp-route-returnUrl="~/home/index">
                                     Register
                                 </a>
                                 <a class="btn ripple btn-min w-sm btn-info me-2"

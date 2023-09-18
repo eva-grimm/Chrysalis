@@ -1,0 +1,31 @@
+﻿@model Project
+@inject IFileService _FileService
+
+<div class="card custom-card card-aside hover-card">
+    <a class="card-aside-column cover-image rounded-start-11"
+        asp-action="Details" asp-controller="Projects" asp-route-id="Model.Id"
+       data-image-src="@_FileService.ConvertByteArrayToFile(Model.ImageData,Model.ImageType,DefaultImage.ProjectImage)"
+       style="background: url('@_FileService.ConvertByteArrayToFile(Model.ImageData,Model.ImageType,DefaultImage.ProjectImage)') center"></a>
+    <div class="card-body ps-3">
+        <h5 class="main-content-label tx-dark tx-medium">@Model?.Name</h5>
+        <p>@Model?.Description</p>
+        @if (Model?.StartDate != null && Model?.EndDate != null)
+        {
+        <div class="progress">
+            @{
+                DateTime today = DateTime.Now;
+                double percent = today >= Model.EndDate ? 100
+                : today < Model.StartDate ? 0
+                : Math.Round((today.Subtract(Model.StartDate)) / (Model.EndDate.Subtract(Model.StartDate)) * 100);
+                percent = percent > 1 ? percent : 1;
+                double width = percent >= 10 ? percent : 10;
+
+                <div class="progress-bar" role="progressbar" aria-valuenow="@percent"
+                     aria-valuemin="0" aria-valuemax="100" style="width:@width%;">
+                    <span class="progress-value">@percent%</span>
+                </div>
+            }
+        </div>
+        }
+    </div>
+</div>

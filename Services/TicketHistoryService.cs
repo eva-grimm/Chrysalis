@@ -14,7 +14,7 @@ namespace Chrysalis.Services
             _context = context;
         }
 
-        public async Task AddHistoryAsync(Ticket? oldTicket, Ticket? newTicket, string? userId)
+        public async Task<bool> AddHistoryAsync(Ticket? oldTicket, Ticket? newTicket, string? userId)
         {
             try
             {
@@ -36,10 +36,11 @@ namespace Chrysalis.Services
                     {
                         await _context.TicketHistories.AddAsync(history);
                         await _context.SaveChangesAsync();
+                        return true;
                     }
                     catch (Exception)
                     {
-                        throw;
+                        return false;
                     }
                 }
                 // if ticket already exists
@@ -150,20 +151,22 @@ namespace Chrysalis.Services
                     try
                     {
                         await _context.SaveChangesAsync();
+                        return true;
                     }
                     catch (Exception)
                     {
-                        throw;
+                        return false;
                     }
                 }
+                else return false;
             }
             catch (Exception)
             {
-                throw;
+                return false;
             }
         }
 
-        public async Task AddHistoryAsync(int? ticketId, string? model, string? userId)
+        public async Task<bool> AddHistoryAsync(int? ticketId, string? model, string? userId)
         {
             try
             {
@@ -186,11 +189,13 @@ namespace Chrysalis.Services
 
                     await _context.TicketHistories.AddAsync(history);
                     await _context.SaveChangesAsync();
+                    return true;
                 }
+                else return false;
             }
             catch (Exception)
             {
-                throw;
+                return false;
             }
         }
 
@@ -217,6 +222,7 @@ namespace Chrysalis.Services
             IEnumerable<Ticket> projectTickets = await _context.Tickets
                 .Where(t => t.ProjectId == projectId && t.Project!.CompanyId == companyId)
                 .Include(t => t.History)
+                    .ThenInclude(h => h.User)
                 .ToListAsync();
 
             return projectTickets
