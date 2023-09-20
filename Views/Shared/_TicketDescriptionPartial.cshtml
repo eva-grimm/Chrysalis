@@ -1,0 +1,27 @@
+﻿@model Ticket
+
+<div class="card custom-card hover-card overflow-hidden">
+    <div class="card-body ps-3">
+        <div class="row g-3">
+            <div class="col-12 fw-bold fs-5">@Model.Title</div>
+            <div class="col-6 col-lg-3">
+                <strong>Created: </strong>
+                <span class="badge bg-light">@Model.Created.ToString("MM.dd.yyyy")</span>
+            </div>
+            <div class="col-6 col-lg-9">
+                <strong>Updated: </strong>
+                @if (Model.Updated == null)
+                {
+                    <span class="badge bg-light">@Model.Created.ToString("MM.dd.yyyy")</span>
+                }
+                else
+                {
+                    <span class="badge bg-light">@Model.Updated.Value.ToString("MM.dd.yyyy")</span>
+                }
+            </div>
+            <div class="col-12">
+                @Model.Description
+            </div>
+        </div>
+    </div>
+</div>

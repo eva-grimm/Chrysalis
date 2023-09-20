@@ -1,6 +1,7 @@
 ﻿@model Project
 @inject IProjectService _ProjectService
 @inject IFileService _FileService
+@inject IRoleService _RoleService
 
 @{
     ViewData["Title"] = "Project Members";
@@ -20,12 +21,30 @@
             <h3>Change Developers?</h3>
             <select class="form-control select2" multiple
                     name="developers" asp-items="ViewBag.Developers">
+                @foreach (BTUser user in Model.Members)
+                {
+                    @if (await _RoleService.IsUserInRoleAsync(user, nameof(BTRoles.Developer)))
+                    {
+                        <option selected value="@user.Id">
+                            @user.FullName
+                        </option>
+                    }
+                }
             </select>
         </div>
         <div class="col-12 col-md-4">
             <h3>Change Submitters?</h3>
             <select class="form-control select2" multiple
                     name="submitters" asp-items="ViewBag.Submitters">
+                @foreach (BTUser user in Model.Members)
+                {
+                    @if (await _RoleService.IsUserInRoleAsync(user, nameof(BTRoles.Submitter)))
+                    {
+                        <option selected value="@user.Id">
+                            @user.FullName
+                        </option>
+                    }
+                }
             </select>
         </div>
     </div>

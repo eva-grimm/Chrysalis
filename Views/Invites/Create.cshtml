@@ -19,22 +19,25 @@
                     </div>
                     <div class="col-md-8 mg-t-5 mg-md-t-0">
                         <input type="email" asp-for="InviteeEmail" class="form-control" placeholder="Enter email">
+                        <span asp-validation-for="InviteeEmail" class="text-danger"></span>
                     </div>
                 </div>
                 <div class="row row-xs align-items-center mg-b-20">
                     <div class="col-md-4">
-                        <label class="mg-b-0">Firstname</label>
+                        <label class="mg-b-0">First Name</label>
                     </div>
                     <div class="col-md-8 mg-t-5 mg-md-t-0">
                         <input type="text" asp-for="InviteeFirstName" class="form-control" placeholder="Enter first name">
+                        <span asp-validation-for="InviteeFirstName" class="text-danger"></span>
                     </div>
                 </div>
                 <div class="row row-xs align-items-center mg-b-20">
                     <div class="col-md-4">
-                        <label class="mg-b-0">Lastname</label>
+                        <label class="mg-b-0">Last Name</label>
                     </div>
                     <div class="col-md-8 mg-t-5 mg-md-t-0">
                         <input type="text" asp-for="InviteeLastName" class="form-control" placeholder="Enter last name">
+                        <span asp-validation-for="InviteeLastName" class="text-danger"></span>
                     </div>
                 </div>
                 <div class="row row-xs align-items-center mg-b-20">
@@ -45,6 +48,7 @@
                         <select class="form-control" asp-for="ProjectId" asp-items="@ViewBag.ProjectId">
                             <option value="">Select Project</option>
                         </select>
+                        <span asp-validation-for="ProjectId" class="text-danger"></span>
                     </div>
                 </div>
                 <div class="row row-xs align-items-center mg-b-20">
@@ -53,6 +57,7 @@
                     </div>
                     <div class="col-md-8 mg-t-5 mg-md-t-0">
                         <textarea asp-for="Message" multiple="multiple" class="form-control"></textarea>
+                        <span asp-validation-for="Message" class="text-danger"></span>
                     </div>
                 </div>
                 <div class="form-group row justify-content-end mb-0">

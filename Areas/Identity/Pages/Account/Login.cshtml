@@ -1,13 +1,9 @@
 ﻿@page
 @model LoginModel
-
 @{
     ViewData["Title"] = "Log in";
     Layout = "/Views/Shared/_LoginLayout.cshtml";
 }
-
-
-<!-- Row -->
 <div class="row signpages text-center">
     <div class="col-md-12">
         <div class="card">
@@ -25,13 +21,12 @@
                 <div class="col-lg-6 col-xl-7 col-xs-12 col-sm-12 login_form ">
                     <div class="main-container container-fluid">
                         <div class="row row-sm">
-                            <div class="card-body mt-2 mb-2">
+                            <div class="card-body mt-2">
                                 <img src="~/assets/img/brand/logo.png" class=" d-lg-none header-brand-img text-start float-start mb-4" alt="logo">
                                 <div class="clearfix"></div>
                                 <form id="account" method="post">
                                     <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
                                     <h5 class="text-start mb-2">Log in to Your Account</h5>
-                                    <p class="mb-4 text-muted tx-13 ms-0 text-start">Log in to create, discover and connect with the global community</p>
                                     <div class="form-group text-start">
                                         <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
                                         <label asp-for="Input.Email" class="form-label">Email</label>
@@ -50,13 +45,29 @@
                                     </div>
                                     <button type="submit" class="btn ripple btn-main-primary btn-block">Log In</button>
                                 </form>
-                                <div class="text-start mt-5 ms-0">
+                                <div class="text-start mt-3 ms-0">
                                     <div class="mb-1">
                                         <a id="forgot-password" asp-page="./ForgotPassword">Forgot your password?</a>
                                     </div>
                                     <div>
                                         Don't have an account?
                                         <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl"> Register here.</a>
+                                    </div>
+                                    <hr />
+                                    <div class="text-center">
+                                        <h5>Or use a demo account to test the app.</h5>
+                                        <form id="account" method="post">
+                                            <div class="form-group">
+                                                <div class="row">
+                                                    <div class="col-12 btn-block">
+                                                        <button type="submit" style="width:inherit;height:min-content" class="btn btn-primary p-10 m-2" name="demoEmail" value="DemoAdminEmail">Demo Admin</button>
+                                                        <button type="submit" style="width:inherit;height:min-content" class="btn btn-primary p-10 m-2" name="demoEmail" value="DemoPMEmail">Demo PM</button>
+                                                        <button type="submit" style="width:inherit;height:min-content" class="btn btn-primary p-10 m-2" name="demoEmail" value="DemoDevEmail">Demo Developer</button>
+                                                        <button type="submit" style="width:inherit;height:min-content" class="btn btn-primary p-10 m-2" name="demoEmail" value="DemoSubEmail">Demo Submitter</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -67,8 +78,6 @@
         </div>
     </div>
 </div>
-<!-- End Row -->
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-}
+    }

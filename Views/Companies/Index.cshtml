@@ -12,6 +12,7 @@
 @{
     ViewData["Title"] = "Index";
     BTUser? currentUser = await _UserManager.GetUserAsync(User);
+    bool userIsAdmin = await _RoleService.IsUserInRoleAsync(currentUser, nameof(BTRoles.Admin));
 }
 <div class="row ps-3">
     <!--Start header-->
@@ -39,49 +40,7 @@
         <div class="d-flex flex-column flex-md-row pb-3">
             <h3 class="fw-bold text-center text-md-justify">Projects</h3>
         </div>
-        <div class="table-responsive border border-bottom-0">
-            <table class="table text-nowrap table-hover">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Project Manager</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Open Tickets</th>
-                        <th>Members</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (Project project in Model.Projects)
-                    {
-                        <tr>
-                            <td>@project.Name</td>
-                            <td>
-                                @if ((await _ProjectService.GetProjectManagerAsync(project.Id)) == null)
-                                {
-                                    <a class="btn btn-primary btn-sm" asp-controller="Projects" asp-action="AssignPM"
-                                       asp-route-projectId="@project.Id">Assign PM</a>
-                                }
-                                else
-                                {
-                                    <span>@((await _ProjectService.GetProjectManagerAsync(project.Id))?.FullName)</span>
-                                }
-                            </td>
-                            <td>@project.StartDate.ToString("MM.dd.yyyy")</td>
-                            <td>@project.EndDate.ToString("MM.dd.yyyy")</td>
-                            <td>@project.Tickets.Where(t => t.TicketStatus?.Name != BTTicketStatuses.Resolved.ToString()).Count()</td>
-                            <td>@project.Members.Count()</td>
-                            <td>
-                                <a asp-action="Details" asp-asp-controller="Projects" asp-route-id="@project.Id">
-                                    <i class="fa-solid fa-circle-info"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+        <partial name="_ProjectsTablePartial" model="@Model.Projects" />
     </div>
     <!--End projects-->
     <!--Start members-->
@@ -89,7 +48,7 @@
         <div class="d-flex flex-column flex-md-row pb-3">
             <h3 class="fw-bold text-center text-md-justify">Members</h3>
             <div class="d-flex mx-auto">
-                <input id="cardFilter" type="search" class="form-control" placeholder="Filter" />
+                <input id="cardFilter" type="text" class="form-control" placeholder="Filter" />
             </div>
             @if (await _RoleService.IsUserInRoleAsync(currentUser, nameof(BTRoles.Admin)))
             {
@@ -112,79 +71,105 @@
     </div>
     <!--End members-->
     <!--Start invites-->
-    @if (await _RoleService.IsUserInRoleAsync(currentUser, nameof(BTRoles.Admin)))
+    @if (userIsAdmin)
     {
         <div class="col-12">
             <div class="d-flex flex-column flex-md-row pb-3">
                 <h3 class="fw-bold text-center text-md-justify">Pending Invites</h3>
             </div>
-            <div class="table-responsive border border-bottom-0">
-                <table class="table text-nowrap table-hover">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Project</th>
-                            <th>Invite Date</th>
-                            <th>Expires</th>
-                            @if ((await _RoleService.GetUsersInRoleAsync(nameof(BTRoles.Admin), Model.Id)).Count() > 1)
-                            {
-                                <th>Invited By</th>
-                            }
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (Invite invite in await _InviteService.GetValidInvitesAsync(Model.Id))
-                        {
-                            <tr>
-                                <td>@invite.InviteeFirstName @invite.InviteeLastName</td>
-                                <td>@invite.InviteeEmail</td>
-                                <td>@invite.Project?.Name</td>
-                                <td>@invite.InviteDate</td>
-                                <td>
-                                    @if ((DateTime.Now - invite.InviteDate.ToLocalTime()).TotalDays <= 7)
+            <div class="card custom-card overflow-hidden">
+                <div class="card-body ps-3">
+                    @if ((await _InviteService.GetValidInvitesAsync(Model.Id)).Count() == 0)
+                    {
+                        <h5>There are no pending invites at this time</h5>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table id="inviteTable" class="table text-nowrap table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Project</th>
+                                        <th>Invite Date</th>
+                                        <th>Expires</th>
+                                        <th>Invited By</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (Invite invite in await _InviteService.GetValidInvitesAsync(Model.Id))
                                     {
-                                        @invite.InviteDate.AddDays(7)
+                                        <tr>
+                                            <td>@invite.InviteeFirstName @invite.InviteeLastName</td>
+                                            <td>@invite.InviteeEmail</td>
+                                            <td>@invite.Project?.Name</td>
+                                            <td>@invite.InviteDate</td>
+                                            <td>
+                                                @if ((DateTime.Now - invite.InviteDate.ToLocalTime()).TotalDays <= 7)
+                                                {
+                                                    @invite.InviteDate.AddDays(7)
+                                                }
+                                                else
+                                                {
+                                                    <span>Expired</span>
+                                                }
+                                            </td>
+                                            <td>@invite.Invitor?.FullName</td>
+                                            <td class="d-flex">
+                                                <form asp-action="RenewInvite" asp-controller="Invites" asp-route-inviteId="@invite.Id">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="bi bi-recycle"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-action="CancelInvite" asp-controller="Invites" asp-route-inviteId="@invite.Id">
+                                                    <button type="submit" class="btn btn-danger ms-1">
+                                                        <i class="bi bi-trash-fill"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
                                     }
-                                    else
-                                    {
-                                        <span>Expired</span>
-                                    }
-                                </td>
-                                @if ((await _RoleService.GetUsersInRoleAsync(nameof(BTRoles.Admin), Model.Id)).Count() > 1)
-                                {
-                                    <td>@invite.Invitor?.FullName</td>
-                                }
-                                <td>
-                                    <form asp-action="CancelInviteAsync" asp-controller="Invites" asp-route-inviteId="invite.Id">
-                                        <button type="submit" class="btn btn-danger">
-                                            <i class="bi bi-trash-fill"></i>
-                                        </button>
-                                    </form>
-                                    <form asp-action="RenewInviteAsync" asp-controller="Invites" asp-route-inviteId="invite.Id">
-                                        <button type="submit" class="btn btn-primary ps-3">
-                                            <i class="bi bi-rewind-circle-fill"></i>
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
     }
     <!--End invites-->
 </div>
 @section Scripts{
+    <!--Sweet Alerts-->
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let message = '@(ViewBag.SwalMessage)';
+        if (!message.includes("Error") && message != '') {
+            Swal.fire({
+                backdrop: false,
+                icon: 'success',
+                title: message,
+                showConfirmButton: true
+            });
+        } else if (message.includes("Error")) {
+            Swal.fire({
+                backdrop: false,
+                icon: 'error',
+                title: 'Oops...',
+                text: message
+            });
+        }
+    </script>
+
     <!--Member button script-->
     <script>
         $(document).ready(function () {
             $('#cardFilter').keyup(function () {
                 let searchString = $(this).val();
                 $(`#userCards > card:not( :contains(${searchString}))`).hide();
-            });
+            })
         })
     </script>
 }

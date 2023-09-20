@@ -11,3 +11,19 @@
     box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px,
         rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
 }
+
+/* #region Template CSS override */
+.card-body:has(.vtimeline) {
+    max-height: 500px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.card:has(.main-content-app:has(main-content-body-chat)) {
+    max-height: 500px
+}
+
+.main-content-body-chat {
+    overflow-y: auto;
+}
+/* #endregion Template CSS override */

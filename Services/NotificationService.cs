@@ -47,6 +47,34 @@ namespace Chrysalis.Services
             }
         }
 
+        public async Task<bool> MarkNotificationReadAsync(int? notificationId, string? userId)
+        {
+            if (notificationId == null || string.IsNullOrEmpty(userId)) return false;
+
+            Notification? notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.Id == notificationId);
+            if (notification == null || !notification.RecipientId!.Equals(userId)) return false;
+
+            notification.HasBeenViewed = true;
+            _context.Notifications.Update(notification);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        
+        public async Task<bool> MarkNotificationUnreadAsync(int? notificationId, string? userId)
+        {
+            if (notificationId == null || string.IsNullOrEmpty(userId)) return false;
+
+            Notification? notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.Id == notificationId);
+            if (notification == null || !notification.RecipientId!.Equals(userId)) return false;
+
+            notification.HasBeenViewed = false;
+            _context.Notifications.Update(notification);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
         public async Task<List<Notification>> GetUserNotificationsAsync(string? userId)
         {
             if (string.IsNullOrEmpty(userId)) return new List<Notification>();
@@ -57,13 +85,16 @@ namespace Chrysalis.Services
                     .Where(n => n.RecipientId == userId)
                     .Include(n => n.Recipient)
                     .Include(n => n.Sender)
+                    .Include(n => n.NotificationType)
+                    .Include(n => n.Ticket)
+                    .Include(n => n.Project)
                     .ToListAsync();
 
                 return notifications;
             }
             catch (Exception)
             {
-                throw;
+                return new List<Notification>();
             }
         }
 

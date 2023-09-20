@@ -8,7 +8,9 @@ namespace Chrysalis.Services.Interfaces
         public Task<bool> AddProjectAsync(Project? project);
         public Task<bool> UpdateProjectAsync(Project? project);
         public Task<IEnumerable<Project>> GetProjectsAsync(int? companyId);
-        public Task<IEnumerable<Project>> GetUnassignedProjectsAsync(int? companyId);
+        public Task<IEnumerable<Project>> GetProjectsByUserIdAsync(string? userId, int? companyId);
+        public Task<IEnumerable<Project>> GetUnassignedActiveProjectsAsync(int? companyId);
+        public Task<IEnumerable<Project>> GetActiveProjectsAsync(int? companyId);
         public Task<IEnumerable<Project>> GetArchivedProjectsAsync(int? companyId);
         public Task<Project?> GetProjectAsync(int? projectId, int? companyId);
         public Task<Project?> GetProjectAsNoTrackingAsync(int? projectId, int? companyId);

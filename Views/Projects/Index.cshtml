@@ -1,10 +1,9 @@
 ﻿@using Microsoft.AspNetCore.Identity;
-@model IEnumerable<Ticket>
-@inject ITicketService _TicketService
+@model IEnumerable<Project>
+@inject IProjectService _ProjectService
 @inject IFileService _FileService
-@inject UserManager<BTUser> _UserManager
 @inject IRoleService _RoleService
-
+@inject UserManager<BTUser> _UserManager
 @{
     BTUser? currentUser = await _UserManager.GetUserAsync(User);
     BTRoles currentUserRole = await _RoleService.GetActiveUserRoleAsync(currentUser!.Id);
@@ -14,6 +13,10 @@
 <div class="row">
     <div class="col-12 text-end">
         @*TO-DO: Search function*@
+        @if (currentUserRole == BTRoles.Admin)
+        {
+            <a asp-action="Create" asp-controller="Projects" class="btn btn-primary">New Project</a>
+        }
     </div>
 </div>
-<partial name="_TicketsTablePartial" model="Model" />
+<partial name="_ProjectsTablePartial" model="Model" />

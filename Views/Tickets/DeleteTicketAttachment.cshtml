@@ -1,0 +1,40 @@
+﻿@model TicketAttachment
+@inject IFileService _FileService
+@{
+    ViewData["Title"] = "Delete Attachment";
+}
+<div class="row">
+    <div class="col-6">
+        <div class="card custom-card card-aside hover-card">
+            <div class="card-body ps-3">
+                <form asp-action="DeleteTicketAttachment">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Id" value="@Model.Id" />
+                    <input type="hidden" name="ticketId" value="@Model.TicketId" />
+                    <div class="row">
+                        <div class="col-12 col-md-3">
+                            <div class="icon">
+                                <img src="@_FileService.GetFileIcon(Model.FileName)"
+                                     style="height:50px;width:50px" data-bs-toggle="tooltip"
+                                     data-bs-placement="top" title="" data-bs-original-title="@Model.FileName" />
+                            </div>
+                            <div style="font-size:x-small">
+                                <div class="file-name">
+                                    <strong>@Model.Description</strong>
+                                </div>
+                                <small>Size: @_FileService.FormatFileSize(Model.FileData.Length) </small>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-9">
+                            <h3 class="fw-bold">Are You Sure?</h3>
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary ripple">Cancel</button>
+                                <button type="submit" class="btn btn-danger ripple">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

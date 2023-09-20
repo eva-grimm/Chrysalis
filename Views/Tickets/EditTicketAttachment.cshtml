@@ -1,0 +1,42 @@
+﻿@model TicketAttachment
+@inject IFileService _FileService
+@{
+    ViewData["Title"] = "Edit Attachment";
+}
+<div class="row">
+    <div class="col-6">
+        <div class="card custom-card card-aside hover-card">
+            <div class="card-body ps-3">
+                <form asp-action="EditTicketAttachment">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Id" value="@Model.Id" />
+                    <input type="hidden" name="ticketId" value="@Model.TicketId" />
+                    <div class="row">
+                        <div class="col-12 col-md-3">
+                            <div class="icon">
+                                <img src="@_FileService.GetFileIcon(Model.FileName)"
+                                     style="height:50px;width:50px" data-bs-toggle="tooltip"
+                                     data-bs-placement="top" title="" data-bs-original-title="@Model.FileName" />
+                            </div>
+                            <div style="font-size:x-small">
+                                <div class="file-name">
+                                    <strong>@Model.Description</strong>
+                                </div>
+                                <small>Size: @_FileService.FormatFileSize(Model.FileData.Length) </small>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-9">
+                            <label asp-for="Description">
+                                <input type="text" asp-for="Description" class="form-control" />
+                            </label>
+                            <div class="form-group">
+                                <button type="button" class="btn btn-danger ripple">Cancel</button>
+                                <button type="submit" class="btn btn-primary ripple">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,17 +1,15 @@
 ﻿@using Microsoft.AspNetCore.Identity;
-@using Chrysalis.Enums
 @inject UserManager<BTUser> _UserManager
+@inject IRoleService _RoleService
 @inject ICompanyService _CompanyService
 @inject INotificationService _NotificationService
 @inject IFileService _FileService
-@inject IRoleService _RoleService
 
 @{
-    BTUser? currentUser = await _CompanyService.GetCompanyUserByIdAsync(_UserManager.GetUserId(User));
-    IEnumerable<string> userRoles = await _RoleService.GetUserRolesAsync(currentUser);
-    string userRole = userRoles.First();
-    List<Notification> notifications = await _NotificationService.GetUserNotificationsAsync(currentUser.Id);
-    List<Notification> unreadNotifications = await _NotificationService.GetUnreadUserNotificationsAsync(currentUser.Id);
+    BTUser? currentUser = await _UserManager.GetUserAsync(User);
+    BTRoles currentUserRole = await _RoleService.GetActiveUserRoleAsync(currentUser!.Id);
+    List<Notification> notifications = await _NotificationService.GetUserNotificationsAsync(currentUser!.Id);
+    List<Notification> unreadNotifications = await _NotificationService.GetUnreadUserNotificationsAsync(currentUser!.Id);
 }
 
 <!DOCTYPE html>
@@ -44,6 +42,14 @@
 
     <!-- Rich Text Editor-->
     <link rel="stylesheet" href="~/assets/plugins/wysiwyag/richtext.css">
+
+    <!-- InternalFancy uploader css-->
+    <link href="../assets/plugins/fancyuploder/fancy_fileupload.css" rel="stylesheet" />
+
+    <!-- DATA TABLE CSS -->
+    <link href="~/assets/plugins/datatable/css/dataTables.bootstrap5.css" rel="stylesheet" />
+    <link href="~/assets/plugins/datatable/css/buttons.bootstrap5.min.css" rel="stylesheet">
+    <link href="~/assets/plugins/datatable/css/responsive.bootstrap5.css" rel="stylesheet" />
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="~/Chrysalis.styles.css" asp-append-version="true" />
@@ -258,8 +264,7 @@
                                             }
                                         </div>
                                         <div class="dropdown-footer">
-                                            <!-- TO-DO: implement showing all notifications -->
-                                            <a href="javascript:void(0)">View All Notifications</a>
+                                            <a asp-controller="Notifications" asp-action="Index">View All Notifications</a>
                                         </div>
                                     </div>
                                 </div>
@@ -277,23 +282,14 @@
                                     </a>
                                     <div class="dropdown-menu">
                                         <div class="header-navheading">
-                                            <h6 class="main-notification-title">Sonia Taylor</h6>
-                                            <p class="main-notification-text">Web Designer</p>
+                                            <h6 class="main-notification-title">@currentUser?.FullName</h6>
+                                            <p class="main-notification-text">@currentUserRole.ToString()</p>
                                         </div>
-                                        <a class="dropdown-item border-top" href="profile.html">
+                                        <a class="dropdown-item border-top" href="#">
                                             <i class="fe fe-user"></i> My Profile
                                         </a>
-                                        <a class="dropdown-item" href="profile.html">
-                                            <i class="fe fe-edit"></i> Edit Profile
-                                        </a>
-                                        <a class="dropdown-item" href="profile.html">
-                                            <i class="fe fe-settings"></i> Account Settings
-                                        </a>
-                                        <a class="dropdown-item" href="profile.html">
+                                        <a class="dropdown-item" href="#">
                                             <i class="fe fe-settings"></i> Support
-                                        </a>
-                                        <a class="dropdown-item" href="profile.html">
-                                            <i class="fe fe-compass"></i> Activity
                                         </a>
                                         <a class="dropdown-item"
                                            href="javascript:document.getElementById('logoutForm').submit();">
@@ -330,7 +326,7 @@
                                 <a class="nav-link" asp-controller="Home" asp-action="Dashboard">
                                     <span class="shape1"></span>
                                     <span class="shape2"></span>
-                                    <i class="ti-home sidemenu-icon menu-icon "></i>
+                                    <i class="bi bi-house-fill sidemenu-icon menu-icon "></i>
                                     <span class="sidemenu-label">Dashboard</span>
                                 </a>
                             </li>
@@ -339,24 +335,25 @@
                                 <a class="nav-link" asp-controller="Companies" asp-action="Index">
                                     <span class="shape1"></span>
                                     <span class="shape2"></span>
-                                    <i class="ti-home sidemenu-icon menu-icon "></i>
+                                    <i class="bi bi-building-fill sidemenu-icon menu-icon "></i>
                                     <span class="sidemenu-label">Company</span>
                                 </a>
                             </li>
                             <li class="nav-header"><span class="nav-label">Projects</span></li>
-                            @if (userRole.Equals(nameof(BTRoles.Admin)))
+                            @if (currentUserRole == BTRoles.Admin)
                             {
                                 <li class="nav-item">
                                     <a class="nav-link with-sub" href="javascript:void(0)">
                                         <span class="shape1"></span>
                                         <span class="shape2"></span>
-                                        <i class="ti-home sidemenu-icon menu-icon "></i>
+                                        <i class="bi bi-easel-fill sidemenu-icon menu-icon "></i>
                                         <span class="sidemenu-label">Projects</span>
                                         <i class="angle fe fe-chevron-right"></i>
                                     </a>
                                     <ul class="nav-sub">
                                         <li class="side-menu-label1"><a href="javascript:void(0)">Projects</a></li>
                                         <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Projects" asp-action="AllProjects">All Projects</a></li>
+                                        <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Projects" asp-action="ActiveProjects">Active Projects</a></li>
                                         <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Projects" asp-action="UnassignedProjects">Unassigned Projects</a></li>
                                         <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Projects" asp-action="ArchivedProjects">Archived Projects</a></li>
                                     </ul>
@@ -364,60 +361,46 @@
                             }
                             else
                             {
-                                <li class="nav-item"><a class="nav-link" asp-controller="Projects" asp-action="MyProjects">Projects</a></li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Projects" asp-action="MyProjects">
+                                        <span class="shape1"></span>
+                                        <span class="shape2"></span>
+                                        <i class="bi bi-easel-fill sidemenu-icon menu-icon "></i>
+                                        <span class="sidemenu-label">Projects</span>
+                                    </a>
+                                </li>
                             }
                             <li class="nav-header"><span class="nav-label">Tickets</span></li>
-                            @if (userRole.Equals(nameof(BTRoles.Admin)))
+                            @if (currentUserRole == BTRoles.Admin)
                             {
-                            <li class="nav-item">
-                                <a class="nav-link with-sub" href="javascript:void(0)">
-                                    <span class="shape1"></span>
-                                    <span class="shape2"></span>
-                                    <i class="ti-home sidemenu-icon menu-icon "></i>
-                                    <span class="sidemenu-label">Tickets</span>
-                                    <i class="angle fe fe-chevron-right"></i>
-                                </a>
-                                <ul class="nav-sub">
-                                    <li class="side-menu-label1"><a href="javascript:void(0)">Tickets</a></li>
-                                    <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="AllTickets">All Tickets</a></li>
-                                    <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="UnassignedTickets">Unassigned Tickets</a></li>
-                                    <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="ArchivedTickets">Archived Tickets</a></li>
-                                </ul>
-                            </li>
+                                <li class="nav-item">
+                                    <a class="nav-link with-sub" href="javascript:void(0)">
+                                        <span class="shape1"></span>
+                                        <span class="shape2"></span>
+                                        <i class="bi bi-list-task sidemenu-icon menu-icon"></i>
+                                        <span class="sidemenu-label">Tickets</span>
+                                        <i class="angle fe fe-chevron-right"></i>
+                                    </a>
+                                    <ul class="nav-sub">
+                                        <li class="side-menu-label1"><a href="javascript:void(0)">Tickets</a></li>
+                                        <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="AllTickets">All Tickets</a></li>
+                                        <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="ActiveTickets">Active Tickets</a></li>
+                                        <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="UnassignedTickets">Unassigned Tickets</a></li>
+                                        <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="ArchivedTickets">Archived Tickets</a></li>
+                                    </ul>
+                                </li>
                             }
                             else
                             {
-                                <li class="nav-item"><a class="nav-link" asp-controller="Tickets" asp-action="MyTickets">Tickets</a></li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Tickets" asp-action="MyTickets">
+                                        <span class="shape1"></span>
+                                        <span class="shape2"></span>
+                                        <i class="bi bi-list-task sidemenu-icon menu-icon"></i>
+                                        <span class="sidemenu-label">Tickets</span>
+                                    </a>
+                                </li>
                             }
-                            <li class="nav-header"><span class="nav-label">Forms &amp; Charts</span></li>
-                            <li class="nav-item">
-                                <a class="nav-link with-sub" href="javascript:void(0)">
-                                    <span class="shape1"></span>
-                                    <span class="shape2"></span>
-                                    <i class="ti-receipt sidemenu-icon menu-icon "></i>
-                                    <span class="sidemenu-label">Forms</span>
-                                    <span class="badge bg-info side-badge">7</span>
-                                </a>
-                                <ul class="nav-sub">
-                                    <li class="side-menu-label1"><a href="javascript:void(0)">Forms</a></li>
-                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-elements.html">Form Elements</a></li>
-                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-advanced.html">Advanced Forms</a></li>
-                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-layouts.html">Form Layouts</a></li>
-                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-validation.html">Form Validation</a></li>
-                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-wizards.html">Form Wizards</a></li>
-                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-editor.html">WYSIWYG Editor</a></li>
-                                    <li class="nav-sub-item"><a class="nav-sub-link" href="form-element-sizes.html">Form Element-sizes</a></li>
-                                </ul>
-                            </li>
-                            <li class="nav-header"><span class="nav-label">Landing</span></li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Home" asp-action="LandingPage">
-                                    <span class="shape1"></span>
-                                    <span class="shape2"></span>
-                                    <i class="ti-layout sidemenu-icon menu-icon "></i>
-                                    <span class="sidemenu-label">Landing Page</span>
-                                </a>
-                            </li>
                         </ul>
                         <div class="slide-right" id="slide-right"><i class="fe fe-chevron-right"></i></div>
                     </div>
@@ -426,7 +409,7 @@
         </div>
         <!-- End Left Sidebar -->
         <!-- Main Content -->
-        <div class="main-content side-content pt-0">
+        <div class="main-content side-content pt-0 ps-3 mb-3">
             <div class="main-container container-fluid">
                 <div class="inner-body">
                     <partial name="_PageHeaderPartial" />
@@ -499,6 +482,28 @@
     <!-- Rich Text Editor JS -->
     <script src="~/assets/plugins/wysiwyag/jquery.richtext.js"></script>
     <script src="~/assets/plugins/wysiwyag/wysiwyag.js"></script>
+
+    <!-- InternalFancy uploader js-->
+    <script src="~/assets/plugins/fancyuploder/jquery.ui.widget.js"></script>
+    <script src="~/assets/plugins/fancyuploder/jquery.fileupload.js"></script>
+    <script src="~/assets/plugins/fancyuploder/jquery.iframe-transport.js"></script>
+    <script src="~/assets/plugins/fancyuploder/jquery.fancy-fileupload.js"></script>
+    <script src="~/assets/plugins/fancyuploder/fancy-uploader.js"></script>
+
+    <!-- Internal Data Table js -->
+    <script src="~/assets/plugins/datatable/js/jquery.dataTables.min.js"></script>
+    <script src="~/assets/plugins/datatable/js/dataTables.bootstrap5.js"></script>
+    <script src="~/assets/plugins/datatable/js/dataTables.buttons.min.js"></script>
+    <script src="~/assets/plugins/datatable/js/buttons.bootstrap5.min.js"></script>
+    <script src="~/assets/plugins/datatable/js/jszip.min.js"></script>
+    <script src="~/assets/plugins/datatable/pdfmake/pdfmake.min.js"></script>
+    <script src="~/assets/plugins/datatable/pdfmake/vfs_fonts.js"></script>
+    <script src="~/assets/plugins/datatable/js/buttons.html5.min.js"></script>
+    <script src="~/assets/plugins/datatable/js/buttons.print.min.js"></script>
+    <script src="~/assets/plugins/datatable/js/buttons.colVis.min.js"></script>
+    <script src="~/assets/plugins/datatable/dataTables.responsive.min.js"></script>
+    <script src="~/assets/plugins/datatable/responsive.bootstrap5.min.js"></script>
+    <script src="~/assets/js/select2.js"></script>
 
     <!-- Spruha Custom js -->
     <script src="~/assets/js/custom.js"></script>

@@ -10,13 +10,19 @@ namespace Chrysalis.Services.Interfaces
         public Task<bool> UpdateTicketAsync(Ticket? ticket);
         public Task<Ticket?> GetTicketByIdAsync(int? ticketId, int? companyId);
         public Task<Ticket?> GetTicketByIdAsNoTrackingAsync(int? ticketId, int? companyId);
-        public Task<IEnumerable<Ticket>> GetCompanyTicketsAsync(int? companyId);
-        public Task<IEnumerable<Ticket>> GetUserTicketsAsync(string? userId, int? companyId);
+        public Task<IEnumerable<Ticket>> GetTicketsAsync(int? companyId);
+        public Task<IEnumerable<Ticket>> GetActiveTicketsAsync(int? companyId);
+        public Task<IEnumerable<Ticket>> GetUnassignedActiveTicketsAsync(int? companyId);
+        public Task<IEnumerable<Ticket>> GetArchivedTicketsAsync(int? companyId);
+        public Task<BTUser?> GetDeveloperAsync(int? ticketId);
+        public Task<IEnumerable<Ticket>> GetTicketsByUserIdAsync(string? userId, int? companyId);
         public Task<IEnumerable<TicketPriority>> GetTicketPrioritiesAsync();
         public Task<IEnumerable<TicketStatus>> GetTicketStatusesAsync();
         public Task<int?> GetTicketStatusByIdAsync(BTTicketStatuses status);
         public Task<IEnumerable<TicketType>> GetTicketTypesAsync();
-        public Task AddTicketAttachmentAsync(TicketAttachment ticketAttachment);
+        public Task<bool> AddTicketAttachmentAsync(TicketAttachment ticketAttachment);
+        public Task<bool> UpdateTicketAttachmentAsync(TicketAttachment ticketAttachment);
+        public Task<bool> DeleteTicketAttachmentAsync(TicketAttachment ticketAttachment);
         public Task<TicketAttachment?> GetTicketAttachmentByIdAsync(int ticketAttachmentId);
     }
 }

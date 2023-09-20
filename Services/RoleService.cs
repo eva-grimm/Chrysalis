@@ -1,9 +1,11 @@
 ﻿using Chrysalis.Data;
+using Chrysalis.Enums;
 using Chrysalis.Models;
 using Chrysalis.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Chrysalis.Services
 {
@@ -87,6 +89,14 @@ namespace Chrysalis.Services
             {
                 throw;
             }
+        }
+
+        public async Task<BTRoles> GetActiveUserRoleAsync(string? userId)
+        {
+            BTUser? currentUser = await _context.Users.FirstOrDefaultAsync(u => u.Id.Equals(userId));
+            IEnumerable<string> result = await _userMananger.GetRolesAsync(currentUser!);
+            _ = Enum.TryParse<BTRoles>(result.First(), out BTRoles role);
+            return role;
         }
 
         public async Task<bool> IsUserInRoleAsync(BTUser? member, string? roleName)

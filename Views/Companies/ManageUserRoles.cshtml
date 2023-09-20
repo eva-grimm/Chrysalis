@@ -1,27 +1,39 @@
 ﻿@using Microsoft.AspNetCore.Identity;
 @model IEnumerable<BTUser>
 @inject IRoleService _RoleService
+@inject IFileService _FileService
 
 @{
     ViewBag.Title = "Manage Roles";
 }
 
-<div class="row">
-    <div class="d-flex flex-column flex-md-row">
-        <h2 class="m-t-0 h3"><b>Manage Member Roles </b></h2>
-        <input id="memberSearch" type="search" class="form-control" />
+<div class="row ps-3">
+    <div class="d-flex">
+        <h3>Manage Member Roles</h3>
+        <!-- TO-DO: Search -->
     </div>
-    <div id="memberCards" class="row row-cols-1 row-cols-lg-2 row-cols-xl-3">
+    <div id="memberCards" class="row g-3">
         @foreach (BTUser member in Model)
         {
-            <form asp-action="ManageUserRolesConfirmed" asp-controller="Companies" method=post>
-                <input type="hidden" name="userId" value="@member.Id" />
-                <div class="card col row">
-                    <div class="col-3">@member.FullName</div>
-                    <div class="col-6"><select name="selected" class="form-control" asp-items="@await _RoleService.GetUserRoleSelectListAsync(member)"></select></div>
-                    <div class="col-3"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i></button></div>
+            <div class="col-12 col-md-6">
+                <div class="card custom-card card-aside hover-card">
+                    @*TO-DO: Add link to user profile or something similar*@
+                    <a class="card-aside-column cover-image rounded-start-11" href="#"
+                       data-image-src="@_FileService.ConvertByteArrayToFile(member.ImageData,member.ImageType,DefaultImage.BTUserImage)"
+                       style="background: url('@_FileService.ConvertByteArrayToFile(member.ImageData,member.ImageType,DefaultImage.BTUserImage)') center"></a>
+                    <div class="card-body ps-3">
+                        <h5 class="main-content-label tx-dark tx-medium">@member?.FullName</h5>
+                        <p>Current role: @((await _RoleService.GetUserRolesAsync(member)).First())</p>
+                        <form asp-action="ManageUserRolesConfirmed" asp-controller="Companies" method=post>
+                            <input type="hidden" name="userId" value="@member!.Id" />
+                            <div class="input-group">
+                                <select name="selected" class="form-control" asp-items="@await _RoleService.GetUserRoleSelectListAsync(member)"></select>
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-floppy-fill"></i></button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </form>
+            </div>
         }
     </div>
 </div>

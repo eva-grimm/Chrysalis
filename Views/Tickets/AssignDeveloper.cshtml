@@ -1,26 +1,78 @@
 ﻿@model Ticket
+@inject IProjectService _ProjectService
+@inject IRoleService _RoleService
+@inject IFileService _FileService
+@inject ICompanyService _CompanyService
 
 @{
-    ViewBag.Title = "Assign Developer";
+    ViewData["Title"] = "Assign Developer";
 }
 
 <div class="row">
-    <div class="col-12 col-md-6">
-        <form asp-action="AssignDeveloper" asp-controller="Tickets">
-            <select name="selected" asp-items="ViewBag.Developers"></select>
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">Submit</button>
-                <a class="btn btn-secondary" asp-action="Details" asp-route-id="Model.Id">Cancel</a>
+    <div class="col-12 col-md-6 order-md-1">
+        <form asp-action="AssignDeveloper" asp-controller="Tickets" method="post" class="d-flex flex-column">
+            <h3>Change Developer</h3>
+            <p class="fw-bold">Ticket: @Model.Title</p>
+            <input type="hidden" name="ticketId" value="@Model.Id" />
+            <div class="input-group">
+                <select asp-items="ViewBag.Developers" name="selected"
+                        class="form-control">
+                    <option>Unassigned</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a asp-action="Details" asp-route-ticketId="@Model.Id"
+                   class="btn btn-secondary">Cancel</a>
             </div>
         </form>
     </div>
-    <div class="col-12 col-md-6">
-        <partial name="_UserPartial" model="Model.DeveloperUser" />
+    <div class="col-12 col-md-6 order-md-3">
+        <h3>Current Developer</h3>
+        @if (Model.DeveloperUserId == null)
+        {
+            <div class="card custom-card card-aside hover-card">
+                <div class="card-aside-column cover-image rounded-start-11" href="#"
+                     data-image-src="@_FileService.ConvertByteArrayToFile(null,null,DefaultImage.BTUserImage)"
+                     style="background: url('@_FileService.ConvertByteArrayToFile(null,null,DefaultImage.BTUserImage)') center"></div>
+                <div class="card-body ps-3">
+                    <h5 class="main-content-label tx-dark tx-medium">Unassigned</h5>
+                </div>
+            </div>
+        }
+        else
+        {
+            <partial name="_UserPartial" model="@await _CompanyService.GetCompanyUserByIdAsync(Model.DeveloperUserId,Model.Project?.CompanyId)" />
+        }
     </div>
-    <div class="col-12 col-md-6">
-        <partial name="_ProjectDetailsPartial" model="Model.Project" />
+    <div class="col-12 col-md-6 order-md-2">
+        <h3>Ticket Description</h3>
+        <partial name="_TicketDescriptionPartial" model="@Model" />
     </div>
-    <div class="col-12 col-md-6">
-        <partial name="_TicketDetailsPartial" model="Model.Project" />
+    <div class="col-12 col-md-6 order-md-4">
+        <h3>Ticket Details</h3>
+        <partial name="_TicketDetailsPartial" model="@Model" />
     </div>
 </div>
+
+@section Scripts {
+    <!--Sweet Alerts-->
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let message = '@(ViewBag.SwalMessage)';
+        if (!message.includes("Error") && message != '') {
+            Swal.fire({
+                backdrop: false,
+                icon: 'success',
+                title: message,
+                showConfirmButton: true
+            });
+        } else if (message.includes("Error")) {
+            Swal.fire({
+                backdrop: false,
+                icon: 'error',
+                title: 'Oops...',
+                text: message
+            });
+        }
+    </script>
+    <!--End Sweet Alerts-->
+}

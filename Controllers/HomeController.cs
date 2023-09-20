@@ -35,8 +35,8 @@ namespace Chrysalis.Controllers
 
         public async Task<IActionResult> Dashboard()
         {
-            BTUser? currentUser = await _companyService.GetCompanyUserByIdAsync(_userManager.GetUserId(User));
-            IEnumerable<Ticket> userTickets = await _ticketService.GetUserTicketsAsync(currentUser.Id, _companyId);
+            BTUser? currentUser = await _companyService.GetCompanyUserByIdAsync(_userManager.GetUserId(User), _companyId);
+            IEnumerable<Ticket> userTickets = await _ticketService.GetTicketsByUserIdAsync(currentUser.Id, _companyId);
             IEnumerable<Ticket> importantTickets = userTickets
                 .Where(t => t.TicketStatusId != (int)BTTicketStatuses.Resolved)
                 .Where(t => t.TicketPriorityId != (int)BTTicketPriorities.High

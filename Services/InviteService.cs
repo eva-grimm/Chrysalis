@@ -140,6 +140,8 @@ namespace Chrysalis.Services
 
             invite.InviteDate = DateTime.Now;
             invite.IsValid = true;
+            _context.Update(invite);
+            await _context.SaveChangesAsync();
             return true;
         }
 

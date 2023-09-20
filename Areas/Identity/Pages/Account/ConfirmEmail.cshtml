@@ -2,16 +2,19 @@
 @model ConfirmEmailModel
 @{
     ViewData["Title"] = "Confirm email";
+    Layout = "/Views/Shared/_LoginLayout.cshtml";
 }
 
-<div class="card">
-    <div class="header">
-        <p class="lead">@ViewData["Title"]</p>
-    </div>
-    <div class="body">
-        <p>@Model.StatusMessage</p>
-
-        <a class="btn btn-primary btn-lg btn-block" asp-area="Identity" asp-page="/Account/Login"><i class="fa fa-sign-in"></i><span> SIGN IN</span></a>
-
+<div class="row signpages text-center">
+    <div class="card">
+        <div class="panel card-sign">
+            <div class="card-title mt-3 text-center">
+                <h2 class="title text-uppercase font-weight-bold m-0">@ViewData["Title"]</h2>
+            </div>
+            <div class="card-body">
+                <p>@Model.StatusMessage</p>
+                <a class="btn btn-primary btn-lg btn-block" asp-area="Identity" asp-page="/Account/Login"><i class="fa fa-sign-in"></i><span> SIGN IN</span></a>
+            </div>
+        </div>
     </div>
 </div>

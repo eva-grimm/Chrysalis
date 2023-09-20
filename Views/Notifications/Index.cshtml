@@ -1,83 +1,92 @@
-﻿@model IEnumerable<Chrysalis.Models.Notification>
+﻿@model BTUser
+@inject INotificationService _NotificationService;
+@inject IFileService _FileService;
 
 @{
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
-
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Title)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Message)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Created)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.HasBeenViewed)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.NotificationType)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Ticket)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Project)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Sender)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Recipient)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Title)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Message)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Created)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.HasBeenViewed)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.NotificationType.Id)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Ticket.Description)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Project.Description)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Sender.Id)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Recipient.Id)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+<div class="card custom-card">
+    <div class="main-content-app">
+        <div class="main-content-left main-content-left-chat">
+            <nav class="nav main-nav-line main-nav-line-chat card-body">
+                <a class="nav-link active" data-bs-toggle="tab" href="#allNotifications">All</a>
+                <a class="nav-link active" data-bs-toggle="tab" href="#unread">Unread</a>
+                @* <a class="nav-link" data-bs-toggle="tab" href="#byTicket">By Ticket</a>
+                <a class="nav-link" data-bs-toggle="tab" href="#byProject">By Project</a> *@
+            </nav>
+            <div class="tab-content main-chat-list ps ps--active-y">
+                <div id="allNotifications" class="tab-pane active">
+                    @foreach (Notification? notification in await _NotificationService.GetUserNotificationsAsync(Model.Id))
+                    {
+                        <div class="media new selected">
+                            <div class="main-img-user">
+                                <img alt="avatar" src="@_FileService.ConvertByteArrayToFile(notification.Sender?.ImageData,notification.Sender?.ImageType,DefaultImage.BTUserImage)" />
+                            </div>
+                            <div class="media-body">
+                                <div class="media-contact-name">
+                                    <span>@notification.Sender?.FullName</span>
+                                    <span class="ps-3">@notification.Title: @notification.Message</span>
+                                </div>
+                                <div>
+                                    <span>
+                                        @if (notification.HasBeenViewed)
+                                        {
+                                            <form asp-controller="Notifications" asp-action="MarkUnread">
+                                                <input type="hidden" name="notificationId" value="@notification.Id" />
+                                                <button type="submit" class="badge bg-secondary"><i class="bi bi-eye-slash-fill"></i></button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form asp-controller="Notifications" asp-action="MarkRead">
+                                                <input type="hidden" name="notificationId" value="@notification.Id" />
+                                                <button type="submit" class="badge bg-secondary"><i class="bi bi-eye-fill"></i></button>
+                                            </form>
+                                        }
+                                    </span>
+                                    <span class="badge bg-primary">@notification.Created.ToString("MM.dd.yyyy t")</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div id="unread" class="tab-pane">
+                    @foreach (Notification? notification in await _NotificationService.GetUnreadUserNotificationsAsync(Model.Id))
+                    {
+                        <div class="media new selected">
+                            <div class="main-img-user">
+                                <img alt="avatar" src="@_FileService.ConvertByteArrayToFile(notification.Sender?.ImageData,notification.Sender?.ImageType,DefaultImage.BTUserImage)" />
+                            </div>
+                            <div class="media-body">
+                                <div class="media-contact-name">
+                                    <span>@notification.Sender?.FullName</span>
+                                    <span class="ps-3">@notification.Title: @notification.Message</span>
+                                </div>
+                                <div>
+                                    <span>
+                                        @if (notification.HasBeenViewed)
+                                        {
+                                            <form asp-controller="Notifications" asp-action="MarkUnread">
+                                                <input type="hidden" name="notificationId" value="@notification.Id" />
+                                                <button type="submit" class="badge bg-secondary"><i class="bi bi-eye-slash-fill"></i></button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form asp-controller="Notifications" asp-action="MarkRead">
+                                                <input type="hidden" name="notificationId" value="@notification.Id" />
+                                                <button type="submit" class="badge bg-secondary"><i class="bi bi-eye-fill"></i></button>
+                                            </form>
+                                        }
+                                    </span>
+                                    <span class="badge bg-primary">@notification.Created.ToString("MM.dd.yyyy t")</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

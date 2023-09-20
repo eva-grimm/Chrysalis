@@ -71,10 +71,22 @@ namespace Chrysalis.Services
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Project>> GetUnassignedProjectsAsync(int? companyId)
+        public async Task<IEnumerable<Project>> GetProjectsByUserIdAsync(string? userId, int? companyId)
+        {
+            return await _context.Projects
+                .Where(p => p.CompanyId == companyId
+                    && p.Members.Any(m => m.Id == userId))
+                .Include(p => p.Members)
+                .Include(p => p.Tickets)
+                .Include(p => p.ProjectPriority)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Project>> GetUnassignedActiveProjectsAsync(int? companyId)
         {
             List<Project> projects = await _context.Projects
-                                .Where(p => p.CompanyId == companyId)
+                                .Where(p => p.CompanyId == companyId
+                                    && !p.Archived)
                                 .Include(p => p.Members)
                                 .Include(p => p.Tickets)
                                 .ToListAsync();
@@ -90,14 +102,24 @@ namespace Chrysalis.Services
             return unassignedProjects;
         }
 
+        public async Task<IEnumerable<Project>> GetActiveProjectsAsync(int? companyId)
+        {
+            return await _context.Projects
+                .Where(p => p.CompanyId == companyId
+                    && !p.Archived)
+                .Include(p => p.Members)
+                .Include(p => p.Tickets)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Project>> GetArchivedProjectsAsync(int? companyId)
         {
             return await _context.Projects
-                                .Where(p => p.CompanyId == companyId
-                                && p.Archived)
-                                .Include(p => p.Members)
-                                .Include(p => p.Tickets)
-                                .ToListAsync();
+                .Where(p => p.CompanyId == companyId
+                && p.Archived)
+                .Include(p => p.Members)
+                .Include(p => p.Tickets)
+                .ToListAsync();
         }
 
         public async Task<Project?> GetProjectAsync(int? projectId, int? companyId)
@@ -216,12 +238,11 @@ namespace Chrysalis.Services
                         }
                     }
                 }
-
                 return null;
             }
             catch (Exception)
             {
-                throw;
+                return null;
             }
         }
 

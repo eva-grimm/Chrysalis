@@ -13,7 +13,7 @@ namespace Chrysalis.Services
         private readonly RoleManager<IdentityRole> _roleManager;
 
         public CompanyService(ApplicationDbContext context,
-            RoleManager<IdentityRole> roleManager) 
+            RoleManager<IdentityRole> roleManager)
         {
             _context = context;
             _roleManager = roleManager;
@@ -65,11 +65,14 @@ namespace Chrysalis.Services
             return company ?? new Company();
         }
 
-        public async Task<BTUser> GetCompanyUserByIdAsync(string? userId)
+        public async Task<BTUser> GetCompanyUserByIdAsync(string? userId, int? companyId)
         {
             if (string.IsNullOrEmpty(userId)) return new BTUser();
 
-            return await _context.Users.FirstOrDefaultAsync(u => u.Id == userId) ?? new BTUser();
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == userId
+                    && u.CompanyId == companyId)
+                ?? new BTUser();
         }
 
         /// <summary>
@@ -82,7 +85,7 @@ namespace Chrysalis.Services
                 .Where(u => u.CompanyId == companyId)
                 .ToListAsync();
         }
-        
+
         /// <summary>
         /// Returns all invites for the current user's company.
         /// </summary>

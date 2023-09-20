@@ -1,191 +1,510 @@
-﻿@model Ticket
+﻿@using Microsoft.AspNetCore.Identity
+@model Ticket
 @inject IFileService _FileService
-
+@inject UserManager<BTUser> _UserManager
+@inject IRoleService _RoleService
+@inject ICompanyService _CompanyService
+@inject ITicketHistoryService _HistoryService
+@inject ICompanyService _CompanyService
 @{
-    ViewData["Title"] = $"Ticket '{Model.Title}' Details";
+    ViewData["Title"] = "Ticket Details";
+    BTUser? currentUser = await _UserManager.GetUserAsync(User);
+    BTRoles currentUserRole = await _RoleService.GetActiveUserRoleAsync(currentUser!.Id);
 }
 
-<div>
-    <div classxfont-weighteighteightgetainer-fluid">
-        <div class="row gy-2">
-            <div class="col-md-12 col">
-                <div class="row col-cols-2 mt-5 bg-secondary">
-                    <div class="card col m-1 p-2">
-                        <div class="card-body">
-                            <h5>@Model.Title</h5>
-                            <p>@Model.Description</p>
-                            <div class="progress-container progress-info m-b-25">
-                                <span class="progress-badge" style="font-size:small">Project Status</span>
-                                <div class="progress">
-                                    @{
-                                        double projectLengthInHours = Model.Project!.EndDate.Subtract(Model.Project!.StartDate).TotalHours;
-                                        double hoursRemaining = Model.Project!.EndDate.Subtract(DateTime.Now).TotalHours;
-                                        double hoursPast = projectLengthInHours - hoursRemaining;
-                                        double percentProgress = Math.Ceiling(hoursPast / projectLengthInHours * 10);
-                                        @if (percentProgress > 100) percentProgress = 100;
-                                        <div class="progress-bar" role="progressbar" aria-valuenow="@percentProgress"
-                                             aria-valuemin="0" aria-valuemax="100" style="width:@percentProgress%;">
-                                            <span class="progress-value">@percentProgress%</span>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card col m-1 p-2">
-                        <div class="card-body">
-                            <ul class="list-unstyled">
-                                <li><strong>Date Entered:</strong> <span class="">  @Model.Created</</span></li>
-                                <li><strong>Deadline:</strong> <span class="">  @Model.Project!.EndDate</</span></li>
-                                @if (Model.TicketType != null)
-                                {
-                                    <li><strong>Type:</strong> <span class="">  @Model.TicketType.Name</span></li>
-                                }
-                                @if (Model.TicketPriority != null)
-                                {
-                                    <li><strong>Priority:</strong> <span class="">  @Model.TicketPriority.Name</span></li>
-                                }
-                                @if (Model.TicketStatus != null)
-                                {
-                                    <li><strong>Status:</strong> <span class="">  @Model.TicketStatus.Name</span></li>
-                                }
-                            </ul>
-                        </div>
-                    </div>
+<div class="row">
+    @* Start Priority Card*@
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card custom-card hover-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between fs-5 pb-3">
+                    <i class="bi bi-flag text-primary"></i>
+                    @if (currentUserRole == BTRoles.Admin
+                    || (currentUserRole == BTRoles.ProjectManager
+                    && Model.Project!.Members.Any(m => m.Id.Equals(currentUser.Id)))
+                    || (currentUserRole == BTRoles.Developer
+                    && Model.DeveloperUserId!.Equals(currentUser.Id))
+                    || (currentUserRole == BTRoles.Submitter
+                    && Model.SubmitterUserId!.Equals(currentUser.Id)))
+                    {
+                        <a data-bs-target="#priorityModal"
+                           data-bs-toggle="modal">
+                            <i class="bi bi-pencil-fill text-danger"></i>
+                        </a>
+                    }
                 </div>
+                <h5>@Model.TicketPriority?.Name</h5>
+                <h6 class="text-primary">Ticket Priority</h6>
             </div>
-            <div class="col-md-8 col col-cols-2 mt-5 ">
-                <div class="col">
-                    <div class="bg-secondary">
-                        <div class="card m-1 p-2">
-                            <div class="card-header">
-                                <h2>Comments</h2>
-                            </div>
-                            <div class="card-body" style="overflow-y:auto;height:600px;">
-                                @*Form and Logic for authorized users to add comments*@
-                                @if (User.Identity!.IsAuthenticated)
-                                {
-                                    <form asp-action="AddTicketComment" asp-route-id="@Model.Id">
-                                        <textarea class="editor form-control" name="comment"></textarea>
-                                        <input type="submit" value="Add Comment"
-                                               class="btn btn-primary mt-3" />
-                                    </form>
-                                }
-                                <hr />
-                                <h6>Comments</h6>
-                                <ul class="right_chat list-unstyled mb-0">
-                                    @foreach (TicketComment comment in Model.Comments.OrderByDescending(c => c.Created))
-                                    {
-                                        <li>
-                                            <strong>@comment.User!.FullName</strong>
-                                            <span> on @comment.Created.ToString("MMM dd yyyy hh:mm tt")</span>
-                                            @Html.Raw(comment.Comment)
-                                        </li>
-                                    }
-                                </ul>
-                            </div>
-                            <div class="card-footer">
-                            </div>
-                        </div>
-                    </div>
+        </div>
+    </div>
+    @* End Priority Card*@
+    @* Start Status Card*@
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card custom-card hover-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between fs-5 pb-3">
+                    @if (Model.Archived || Model.ArchivedByProject)
+                    {
+                        <i class="bi bi-clock-history text-secondary"></i>
+                    }
+                    else
+                    {
+                        <i class="bi bi-activity text-secondary"></i>
+                    }
+                    @if (currentUserRole == BTRoles.Admin
+                    || (currentUserRole == BTRoles.ProjectManager
+                    && Model.Project!.Members.Any(m => m.Id.Equals(currentUser.Id)))
+                    || (currentUserRole == BTRoles.Developer
+                    && Model.DeveloperUserId!.Equals(currentUser.Id))
+                    || (currentUserRole == BTRoles.Submitter
+                    && Model.SubmitterUserId!.Equals(currentUser.Id)))
+                    {
+                        <a data-bs-target="#statusModal"
+                           data-bs-toggle="modal">
+                            <i class="bi bi-pencil-fill text-danger"></i>
+                        </a>
+                    }
                 </div>
-                <div class="col">
-                    <div class="bg-secondary">
-                        <div class="card m-1 p-2">
-                            <div class="card-header">
-                                <h2>Attachments</h2>
-                            </div>
-                            <div class="card-body" style="overflow-y:auto;height:300px;">
-                                <div class="row clearfix">
-                                    <div>
-                                        <form asp-action="AddTicketAttachment" asp-controller="Tickets" enctype="multipart/form-data" method="post">
-                                            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                                            <input type="hidden" asp-for="@Model.Id" name="TicketId">
-                                            <div class="media-body ml-3">
-                                                <label>
-                                                    Description
-                                                    <input name="Description" type="text" class="form-control" />
-                                                </label><br />
-                                                <label class="btn btn-outline-primary btn-sm">
-                                                    <input name="FormFile" type="file" class="form-control-file" />
-                                                </label>
-                                                <button type="submit" class="btn btn-outline-secondary btn-sm md-btn-flat">Submit</button>
-                                            </div>
-                                        </form>
+                <h5>
+                    @if (Model.Archived)
+                    {
+                        <span>Archived</span>
+                    }
+                    else if (Model.ArchivedByProject)
+                    {
+                        <span>Project Archived</span>
+                    }
+                    else
+                    {
+                        @Model.TicketStatus?.Name
+                    }
+                </h5>
+                <h6 class="text-primary">Ticket Status</h6>
+            </div>
+        </div>
+    </div>
+    @* End Status Card*@
+    @* Start Type Card*@
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card custom-card hover-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between fs-5 pb-3">
+                    <i class="bi bi-clipboard-data text-info"></i>
+                    @if (currentUserRole == BTRoles.Admin
+                    || (currentUserRole == BTRoles.ProjectManager
+                    && Model.Project!.Members.Any(m => m.Id.Equals(currentUser.Id)))
+                    || (currentUserRole == BTRoles.Developer
+                    && Model.DeveloperUserId!.Equals(currentUser.Id))
+                    || (currentUserRole == BTRoles.Submitter
+                    && Model.SubmitterUserId!.Equals(currentUser.Id)))
+                    {
+                        <a data-bs-target="#typeModal"
+                           data-bs-toggle="modal">
+                            <i class="bi bi-pencil-fill text-danger"></i>
+                        </a>
+                    }
+                </div>
+                <h5>@Model.TicketType?.Name</h5>
+                <h6 class="text-primary">Ticket Type</h6>
+            </div>
+        </div>
+    </div>
+    @* End Type Card*@
+    @* Start Developer Card*@
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card custom-card hover-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between fs-5 pb-3">
+                    <i class="bi bi-braces text-success"></i>
+                    @if (currentUserRole == BTRoles.Admin
+                    || (currentUserRole == BTRoles.ProjectManager
+                    && Model.Project!.Members.Any(m => m.Id.Equals(currentUser.Id))))
+                    {
+                        <a data-bs-target="#devModal"
+                           data-bs-toggle="modal">
+                            <i class="bi bi-pencil-fill text-danger"></i>
+                        </a>
+                    }
+                </div>
+                <h5>
+                    @if (Model.DeveloperUserId == null)
+                    {
+                        <span>Unassigned</span>
+                    }
+                    else
+                    {
+                        @((await _CompanyService.GetCompanyUserByIdAsync(Model.DeveloperUserId, Model.Project?.CompanyId))?.FullName)
+                    }
+                </h5>
+                <h6 class="text-primary">Assigned Developer</h6>
+            </div>
+        </div>
+    </div>
+    @* End Developer Card*@
+    @* Start Description Card*@
+    <div class="col-12 col-md-8">
+        <div class="d-flex justify-content-between fs-5">
+            <h3>Ticket Description</h3>
+            @if (currentUserRole == BTRoles.Admin
+            || (currentUserRole == BTRoles.ProjectManager
+            && Model.Project!.Members.Any(m => m.Id.Equals(currentUser.Id)))
+            || (currentUserRole == BTRoles.Developer
+            && Model.DeveloperUserId!.Equals(currentUser.Id))
+            || (currentUserRole == BTRoles.Submitter
+            && Model.SubmitterUserId!.Equals(currentUser.Id)))
+            {
+                <a asp-action="Edit" asp-controller="Tickets"
+                   asp-route-id="@Model.Id">
+                    <i class="bi bi-pencil-fill text-danger"></i>
+                </a>
+            }
+        </div>
+        <partial name="_TicketDescriptionPartial" model="@Model" />
+    </div>
+    @* End Description Card*@
+    @* Start Submitter Card*@
+    <div class="col-12 col-md-4">
+        <h3>Submitted By:</h3>
+        <partial name="_UserPartial" model="@(await _CompanyService.GetCompanyUserByIdAsync(Model.SubmitterUserId, Model.Project?.CompanyId))" />
+    </div>
+    @* End Submitter Card*@
+    @* Start History Card*@
+    <div class="col-12 col-lg-6">
+        <h3>Ticket History</h3>
+        <div class="card custom-card">
+            <div class="card-body">
+                <div class="vtimeline">
+                    @{
+                        List<TicketHistory> histories = Model.History.ToList();
+                        @for (int i = 0; i < histories.Count() - 1; i++)
+                        {
+                            if (i % 2 == 0)
+                            {
+                                <div class="timeline-wrapper timeline-wrapper-primary">
+                                    <div class="timeline-badge"></div>
+                                    <div class="timeline-panel">
+                                        <div class="timeline-heading">
+                                            <div class="timeline-title fw-bold">User: @histories[i].User?.FullName</div>
+                                            <div class="timeline-body"><p>@histories[i].Description</p></div>
+                                        </div>
                                     </div>
                                 </div>
-                                <hr />
-                                <h6>Attachments</h6>
-                                <div class="container">
-                                    <div class="row">
-                                        @foreach (TicketAttachment item in Model.Attachments)
-                                        {
-                                            <div class="col col-sm-2">
-                                                <a asp-action="ShowFile" asp-controller="Tickets" asp-route-Id="@item.Id">
-                                                    <div class="icon">
-                                                        <img src="@_FileService.GetFileIcon(item!.FileName!)"
-                                                             style="height:50px;width:50px" data-bs-toggle="tooltip"
-                                                             data-bs-placement="top" title="" data-bs-original-title="@item.FileName" />
+                            }
+                            else
+                            {
+                                <div class="timeline-wrapper timeline-inverted timeline-wrapper-secondary">
+                                    <div class="timeline-badge"></div>
+                                    <div class="timeline-panel">
+                                        <div class="timeline-heading">
+                                            <div class="timeline-title fw-bold">User: @histories[i].User?.FullName</div>
+                                            <div class="timeline-body"><p>@histories[i].Description</p></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+    @* End History Card*@
+    @* Start Comments Card*@
+    <div class="col-12 col-lg-6">
+        <h3>Ticket Comments:</h3>
+        <div class="card custom-card">
+            <div class="main-content-app">
+                <div class="main-content-body main-content-body-chat">
+                    <div class="main-chat-header pt-0">
+                        <div class="main-img-user online">
+                            <img alt="avatar"
+                                 src="@_FileService.ConvertByteArrayToFile(currentUser.ImageData,currentUser.ImageType,DefaultImage.BTUserImage)">
+                        </div>
+                        <div class="main-chat-msg-name">
+                            <h6>@currentUser.FullName</h6>
+                            <small class="me-3">@((await _RoleService.GetActiveUserRoleAsync(currentUser.Id)).ToString())</small>
+                        </div>
+                        <nav class="nav">
+                            <a class="nav-link" href="" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                <i class="fe fe-more-horizontal"></i>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end shadow">
+                                <a class="dropdown-item" href="javascript:void(0)">Total Comments: @Model.Comments.Count()</a>
+                            </div>
+                            <a class="nav-link" data-bs-toggle="tooltip" href="javascript:void(0)" title="Total Comments: @Model.Comments.Count()"><i class="bi bi-layers"></i></a>
+                        </nav>
+                    </div>
+                    <div class="main-chat-body" id="ChatBody">
+                        <div class="content-inner">
+                            @{
+                                List<TicketComment> comments = Model.Comments.ToList();
+                                for (int i = 0; i < comments.Count(); i++)
+                                {
+                                    if (comments[i].UserId == currentUser.Id)
+                                    {
+                                        <div class="media flex-row-reverse">
+                                            <div class="main-img-user">
+                                                <img alt="avatar"
+                                                     src="@_FileService.ConvertByteArrayToFile(currentUser.ImageData,currentUser.ImageType,DefaultImage.BTUserImage)">
+                                            </div>
+                                            <div class="media-body">
+                                                <div class="main-msg-wrapper">
+                                                    <strong>@currentUser.FullName</strong><br />
+                                                    @comments[i].Comment
+                                                </div>
+                                                @while (i < comments.Count() - 1 && comments[i + 1].UserId == currentUser.Id)
+                                                {
+                                                    <div class="main-msg-wrapper2">
+                                                        @comments[i + 1].Comment
                                                     </div>
-                                                </a>
-                                                <div style="font-size:x-small">
-                                                    <div class="file-name">
-                                                        <strong>@item.Description</strong>
-                                                    </div>
-                                                    <small>Size: @_FileService.FormatFileSize(item!.FileData!.Length) </small>
+                                                    i++;
+                                                }
+                                                <div>
+                                                    <span>@comments[i].Created.ToString("MMM dd, hh:mm tt")</span><i class="icon ion-android-more-horizontal"></i>
                                                 </div>
                                             </div>
-                                        }
-                                    </div>
-                                </div>
-
-                            </div>
-                            <div class="card-footer">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 col mt-5 ">
-                <div class="bg-dark">
-                    <div class="card m-1 p-2">
-                        <div class="card-header">
-                            <h2>Assigned Developer</h2>
-                            <hr />
-                        </div>
-                        <div class="card-body">
-                            @if (Model!.DeveloperUser != null)
-                            {
-                                <img src="@_FileService.ConvertByteArrayToFile(Model?.DeveloperUser?.ImageData,
-                                    Model?.DeveloperUser?.ImageType, DefaultImage.BTUserImage)"
-                                     class="img-thumbnail rounded-circle"
-                                     style="width: 50px;" />
-                                <span> @Model!.DeveloperUser.FullName</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        BTUser user = await _CompanyService.GetCompanyUserByIdAsync(comments[i].UserId, Model.Project?.CompanyId);
+                                        <div class="media">
+                                            <div class="main-img-user">
+                                                <img alt="avatar"
+                                                     src="@_FileService.ConvertByteArrayToFile(user.ImageData,user.ImageType,DefaultImage.BTUserImage)">
+                                            </div>
+                                            <div class="media-body">
+                                                <div class="main-msg-wrapper">
+                                                    <strong>@user.FullName</strong><br />
+                                                    @comments[i].Comment
+                                                </div>
+                                                @while (i < comments.Count() - 1 && comments[i + 1].UserId == user.Id)
+                                                {
+                                                    <div class="main-msg-wrapper2">
+                                                        @comments[i + 1].Comment
+                                                    </div>
+                                                    i++;
+                                                }
+                                                <div>
+                                                    <span>@comments[i].Created.ToString("MMM dd, hh:mm tt")</span><i class="icon ion-android-more-horizontal"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
                             }
                         </div>
                     </div>
-                </div>
-                <div class="bg-dark">
-                    <div class="card m-1 p-2">
-                        <div class="card-header">
-                            <h2>History</h2>
-                            <hr />
+                    <form asp-controller="Tickets" asp-action="AddComment">
+                        <div class="main-chat-footer">
+                            <input type="hidden" name="ticketId" value="@Model.Id" />
+                            <input class="form-control" name="comment" autocomplete="off"
+                                   placeholder="Leave your comment here..." type="text">
+                            @* <a class="main-msg-send" href=""><i class="far fa-paper-plane"></i></a> *@
+                            <button class="btn btn-primary ripple" type="submit"><i class="bi bi-send"></i></button>
                         </div>
-                        <div class="card-body" style="overflow-y:auto;height:1000px;background-color:antiquewhite">
-                            @*Loop to show the history entries for the Ticket*@
-                        </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+    @* End Comments Card*@
+    @* Start Attachments Card*@
+    <div class="col-12">
+        <div class="d-flex justify-content-between fs-5">
+            <h3>Ticket Attachments</h3>
+            @if (currentUserRole == BTRoles.Admin
+            || (currentUserRole == BTRoles.ProjectManager
+            && Model.Project!.Members.Any(m => m.Id.Equals(currentUser.Id))))
+            {
+                <a data-bs-target="#addAttachModal"
+                   data-bs-toggle="modal">
+                    <i class="bi bi-file-earmark-plus text-primary"></i>
+                </a>
+            }
+        </div>
+        <div class="row">
+            @if (Model.Attachments.Count() == 0)
+            {
+                <div class="col-12">
+                    <div class="card custom-card">
+                        <div class="card-body text-center">
+                            <h5 class="fw-bold">There are presently no attachments</h5>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                @foreach (TicketAttachment attachment in Model.Attachments)
+                {
+                    <div class="col-12 col-lg-6">
+                        <div class="card custom-card">
+                            <div class="card-body">
+                                <div class="d-flex">
+                                    <div class="media align-items-center pos-relative">
+                                        <span class="tx-16 lh--7 my-auto"><i class="bg-primary-light p-2 rounded-50 fe fe-image tx-18 me-2"></i></span>
+                                        <div class="media-body ms-3">
+                                            @attachment.FileName
+                                            <p class="tx-11 mg-b-0 tx-gray-500">@attachment.Description</p>
+                                        </div>
+                                    </div>
+                                    <div class="float-end ms-auto pos-absolute r-5 t-15 ">
+                                        <a href="javascript:void(0)" class="option-dots" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fe fe-more-vertical"></i></a>
+                                        <div class="dropdown-menu dropdown-menu-start">
+                                            <a class="dropdown-item" asp-action="EditTicketAttachment" asp-controller="Tickets"
+                                               asp-route-attachmentId="@attachment.Id" asp-route-ticketId="@Model.Id">
+                                                <i class="fe fe-edit me-2"></i>Edit
+                                            </a>
+                                            <a class="dropdown-item" asp-action="ShowFile" asp-controller="Tickets"
+                                               asp-route-attachmentId="@attachment.Id">
+                                                <i class="fe fe-download me-2"></i>Download
+                                            </a>
+                                            <a class="dropdown-item" asp-action="DeleteTicketAttachment" asp-controller="Tickets"
+                                               asp-route-attachmentId="@attachment.Id" asp-route-ticketId="@Model.Id">
+                                                <i class="fe fe-trash me-2"></i>Delete
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+    @* End Attachments Card*@
 </div>
-
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+@* Start @*Ticket Priority modal *@
+<div class="modal" id="priorityModal">
+    <form asp-controller="Tickets" asp-action="UpdatePriority" method="post">
+        <input type="hidden" name="ticketId" value="@Model.Id" />
+        <div class="modal-dialog" role="document">
+            <div class="modal-content modal-content-demo">
+                <div class="modal-header">
+                    <h6 class="modal-title">Ticket Priority</h6><button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Select2 -->
+                    <select name="selected" class="form-control"
+                            asp-items="ViewBag.TicketPriorities">
+                    </select>
+                    <!-- Select2 -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn ripple btn-primary" type="submit">Save</button>
+                    <button class="btn ripple btn-secondary" data-bs-dismiss="modal" type="button">Close</button>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
-
+@* End Ticket Priority modal *@
+@* Start @*Ticket Status modal *@
+<div class="modal" id="statusModal">
+    <form asp-controller="Tickets" asp-action="UpdateStatus" method="post">
+        <input type="hidden" name="ticketId" value="@Model.Id" />
+        <div class="modal-dialog" role="document">
+            <div class="modal-content modal-content-demo">
+                <div class="modal-header">
+                    <h6 class="modal-title">Ticket Status</h6><button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Select2 -->
+                    <select name="selected" class="form-control"
+                            asp-items="ViewBag.TicketStatuses">
+                    </select>
+                    <!-- Select2 -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn ripple btn-primary" type="submit">Save</button>
+                    <button class="btn ripple btn-secondary" data-bs-dismiss="modal" type="button">Close</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+@* End Ticket Status modal *@
+@* Start @*Ticket Type modal *@
+<div class="modal" id="typeModal">
+    <form asp-controller="Tickets" asp-action="UpdateType" method="post">
+        <input type="hidden" name="ticketId" value="@Model.Id" />
+        <div class="modal-dialog" role="document">
+            <div class="modal-content modal-content-demo">
+                <div class="modal-header">
+                    <h6 class="modal-title">Ticket Type</h6><button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Select2 -->
+                    <select name="selected" class="form-control"
+                            asp-items="ViewBag.TicketTypes">
+                    </select>
+                    <!-- Select2 -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn ripple btn-primary" type="submit">Save</button>
+                    <button class="btn ripple btn-secondary" data-bs-dismiss="modal" type="button">Close</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+@* End Ticket Type modal *@
+@* Start @*Assign Developer modal *@
+<div class="modal" id="devModal">
+    <form asp-controller="Tickets" asp-action="AssignDeveloper" method="post">
+        <input type="hidden" name="ticketId" value="@Model.Id" />
+        <div class="modal-dialog" role="document">
+            <div class="modal-content modal-content-demo">
+                <div class="modal-header">
+                    <h6 class="modal-title">Assign Developer</h6><button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Select2 -->
+                    <select name="selected" class="form-control"
+                            asp-items="ViewBag.Developers">
+                    </select>
+                    <!-- Select2 -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn ripple btn-primary" type="submit">Save</button>
+                    <button class="btn ripple btn-secondary" data-bs-dismiss="modal" type="button">Close</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+@* End Assign Developer modal *@
+@* Start @*Add Attachment modal *@
+<div class="modal" id="addAttachModal">
+    <form asp-controller="Tickets" asp-action="AddTicketAttachment" enctype="multipart/form-data" method="post">
+        <input type="hidden" name="TicketId" value="@Model.Id" />
+        <div class="modal-dialog" role="document">
+            <div class="modal-content modal-content-demo">
+                <div class="modal-header">
+                    <h6 class="modal-title">Add a File</h6><button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                </div>
+                <div class="modal-body">
+                    <label>
+                        Description
+                        <input type="text" name="Description" class="form-control" />
+                    </label>
+                    <label class="btn btn-outline-primary btn-sm">
+                        <input name="FormFile" type="file" class="form-control-file" />
+                    </label>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-danger ripple">Cancel</button>
+                        <button type="submit" class="btn btn-primary ripple">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+@* End Add Attachment modal *@
 @section scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
@@ -304,4 +623,4 @@
         }
     </script>
     <!--End Sweet Alerts-->
-}
+    }

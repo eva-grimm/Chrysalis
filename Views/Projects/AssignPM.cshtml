@@ -1,26 +1,55 @@
 ﻿@model Project
 @inject IProjectService _ProjectService
 @inject IRoleService _RoleService
+@inject IFileService _FileService
 
 @{
     ViewData["Title"] = "Assign Project Manager";
 }
 
-<div class="col-3">
-    <form asp-action="AssignPM" asp-controller="Projects" method="post" class="d-flex flex-column">
-        <h3>Change Project Manager?</h3>
-        <p class="fw-bold">Project: @Model.Name</p>
-        <input type="hidden" name="projectId" value="@Model.Id" />
-        <select asp-items="ViewBag.ProjectManagers" name="selectedPMId"
-                class="form-control select2">
-            <option value="">Unassigned</option>
-        </select>
-        <div class="d-flex align-items-center">
-            <button type="submit" class="btn btn-primary my-3">Save</button>
-            <a asp-action="Details" asp-route-id="@Model.Id"
-               class="btn btn-secondary ms-3">Cancel</a>
-        </div>
-    </form>
+<div class="row">
+    <div class="col-12 col-md-6 order-md-1">
+        <form asp-action="AssignPM" asp-controller="Projects" method="post" class="d-flex flex-column">
+            <h3>Change Project Manager?</h3>
+            <p class="fw-bold">Project: @Model.Name</p>
+            <input type="hidden" name="projectId" value="@Model.Id" />
+            <div class="input-group">
+                <select asp-items="ViewBag.ProjectManagers" name="selectedPMId"
+                        class="form-control">
+                    <option>Unassigned</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a asp-action="Details" asp-route-id="@Model.Id"
+                   class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+    <div class="col-12 col-md-6 order-md-3">
+        <h3>Current Project Manager</h3>
+        @if (await _ProjectService.GetProjectManagerAsync(Model.Id) == null)
+        {
+            <div class="card custom-card card-aside hover-card">
+                <div class="card-aside-column cover-image rounded-start-11" href="#"
+                     data-image-src="@_FileService.ConvertByteArrayToFile(null,null,DefaultImage.BTUserImage)"
+                     style="background: url('@_FileService.ConvertByteArrayToFile(null,null,DefaultImage.BTUserImage)') center"></div>
+                <div class="card-body ps-3">
+                    <h5 class="main-content-label tx-dark tx-medium">Unassigned</h5>
+                </div>
+            </div>
+        }
+        else
+        {
+            <partial name="_UserPartial" model="@await _ProjectService.GetProjectManagerAsync(Model.Id)" />
+        }
+    </div>
+    <div class="col-12 col-md-6 order-md-2">
+        <h3>Project Description</h3>
+        <partial name="_ProjectDescriptionPartial" model="@Model" />
+    </div>
+    <div class="col-12 col-md-6 order-md-4">
+        <h3>Project Details</h3>
+        <partial name="_ProjectDetailsPartial" model="@Model" />
+    </div>
 </div>
 
 @section Scripts {

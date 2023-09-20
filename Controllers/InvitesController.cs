@@ -67,7 +67,7 @@ namespace Chrysalis.Controllers
                 string emailAsString = _protector.Protect(invite.InviteeEmail!);
                 string companyAsString = _protector.Protect(_companyId.ToString());
 
-                string? callbackUrl = Url.Action("ProcessInvite", "Invites", new { tokenAsString, emailAsString, companyAsString }, protocol: Request.Scheme);
+                string? callbackUrl = Url.Action("ProcessInvite", "Invites", new { token = tokenAsString, email = emailAsString, company = companyAsString }, protocol: Request.Scheme);
 
                 string body = $@"{invite.Message} <br />
                        Please click the following link to join our team and start collaborating! <br />
@@ -77,7 +77,7 @@ namespace Chrysalis.Controllers
 
                 Company company = await _companyService.GetCompanyByIdAsync(_companyId);
 
-                string? subject = $" Nova Tracker: {company.Name} Invite";
+                string? subject = $" Chrysalis: {company.Name} Invite";
 
                 await _emailService.SendEmailAsync(destination, subject, body);
 
@@ -90,9 +90,7 @@ namespace Chrysalis.Controllers
 
                 await _inviteService.AddNewInviteAsync(invite);
 
-                return RedirectToAction("Index", "Home");
-
-                // TO-DO: Possibly use SWAL message
+                return RedirectToAction("Index", "Companies", new { swalMessage = "Success: Invite sent!" });
             }
             catch (Exception)
             {
@@ -109,7 +107,7 @@ namespace Chrysalis.Controllers
             bool success = await _inviteService.CancelInviteAsync(inviteId, _companyId);
             if (!success) throw new BadHttpRequestException("Error cancelling invite", 500);
 
-            return View("Index", "Companies");
+            return RedirectToAction("Index", "Companies", new { swalMessage = "Success: Invite cancelled" });
         }
         
         [HttpPost,ValidateAntiForgeryToken]
@@ -120,7 +118,7 @@ namespace Chrysalis.Controllers
             bool success = await _inviteService.RenewInviteAsync(inviteId, _companyId);
             if (!success) throw new BadHttpRequestException("Error renewing invite", 500);
 
-            return View("Index", "Companies");
+            return RedirectToAction("Index", "Companies", new { swalMessage = "Success: Invite renewed" });
         }
 
         [HttpGet, AllowAnonymous]
@@ -141,7 +139,7 @@ namespace Chrysalis.Controllers
 
                 if (invite == null) return NotFound();
                 else if (!invite.IsValid 
-                    || (DateTime.Now - invite.InviteDate.ToLocalTime()).TotalDays <= 7) 
+                    || (DateTime.Now - invite.InviteDate.ToLocalTime()).TotalDays > 7) 
                     throw new BadHttpRequestException("This invite is no longer valid", 400);
 
                 return View(invite);

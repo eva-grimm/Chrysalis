@@ -209,10 +209,13 @@ namespace Chrysalis.Services
                     .ThenInclude(t => t.History)
                 .ToListAsync();
 
-            return companyProjects
+            List<TicketHistory> histories = companyProjects
                 .SelectMany(p => p.Tickets)
                 .SelectMany(t => t.History)
+                .OrderByDescending(h => h.Created)
                 .ToList();
+
+            return histories;
         }
 
         public async Task<List<TicketHistory>> GetProjectTicketHistoriesAsync(int? projectId, int? companyId)
@@ -223,11 +226,15 @@ namespace Chrysalis.Services
                 .Where(t => t.ProjectId == projectId && t.Project!.CompanyId == companyId)
                 .Include(t => t.History)
                     .ThenInclude(h => h.User)
+                .OrderBy(h => h.Created)
                 .ToListAsync();
 
-            return projectTickets
+            List<TicketHistory> histories = projectTickets
                 .SelectMany(t => t.History)
+                .OrderByDescending(h => h.Created)
                 .ToList();
+
+            return histories;
         }
     }
 }

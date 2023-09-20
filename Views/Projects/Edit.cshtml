@@ -4,63 +4,63 @@
 @{
     ViewData["Title"] = "Edit Project";
 }
-
-<form asp-action="Edit" enctype="multipart/form-data">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <div class="row g-3">
-        <div class="col-12">
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
+<div class="mb-3">
+    <form asp-action="Edit" enctype="multipart/form-data">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="form-group">
+                    <label asp-for="Name" class="control-label"></label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="form-group">
+                    <label asp-for="Description" class="control-label"></label>
+                    <textarea asp-for="Description" class="form-control content5"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <p>Project Image</p>
+                <div class="form-group">
+                    <img id="projectImage" class="img-fluid border rounded-3 mb-2" style="max-height: 350px;"
+                         src="@_FileService.ConvertByteArrayToFile(Model?.ImageData!,Model?.ImageType!, DefaultImage.ProjectImage)">
+                    <input asp-for="ImageFile" type="file" class="form-control mt-3 pt-2" accept=".png,.jpg,.jpeg,.gif"
+                           onchange="document.getElementById('projectImage').src = window.URL.createObjectURL(this.files[0])" />
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="form-group">
+                    <p>Start Date</p>
+                    <input asp-for="StartDate" class="form-control" />
+                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <p>End Date</p>
+                    <input asp-for="EndDate" class="form-control" />
+                    <span asp-validation-for="EndDate" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label for="projectManagerId" class="control-label">Project Manager</label>
+                    <select name="projectManagerId" class="form-control" asp-items="ViewBag.ProjectManagers">
+                        <option>Unassigned</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <p>Project Priority</p>
+                    <select asp-for="ProjectPriorityId" class="form-control" asp-items="ViewBag.ProjectPriorities"></select>
+                </div>
+                <div class="d-flex">
+                    <button type="submit" class="btn btn-primary">Edit</button>
+                    <a asp-controller="Projects" asp-action="Index"
+                       class="btn btn-danger ms-3">Cancel</a>
+                </div>
             </div>
         </div>
-        <div class="col-12">
-            <div class="form-group">
-                <label asp-for="Description" class="control-label"></label>
-                <textarea asp-for="Description" class="form-control content5"></textarea>
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-        </div>
-        <div class="col-12 col-md-6">
-            <p>Project Image</p>
-            <div class="form-group">
-                <img id="projectImage" class="img-fluid border rounded-3 mb-2" style="max-height: 350px;"
-                     src="@_FileService.ConvertByteArrayToFile(Model?.ImageData!,Model?.ImageType!, DefaultImage.ProjectImage)">
-                <input asp-for="ImageFile" type="file" class="form-control mt-3 pt-2" accept=".png,.jpg,.jpeg,.gif"
-                       onchange="document.getElementById('projectImage').src = window.URL.createObjectURL(this.files[0])" />
-            </div>
-        </div>
-        <div class="col-12 col-md-6">
-            <div class="form-group">
-                <p>Start Date</p>
-                <input asp-for="StartDate" class="form-control" />
-                <span asp-validation-for="StartDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <p>End Date</p>
-                <input asp-for="EndDate" class="form-control" />
-                <span asp-validation-for="EndDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label for="projectManagerId" class="control-label">Project Manager</label>
-                <select name="projectManagerId" class="form-control" asp-items="ViewBag.ProjectManagers">
-                    <option value="null">Select a Project Manager</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <p>Project Priority</p>
-                <select asp-for="ProjectPriorityId" class="form-control" asp-items="ViewBag.ProjectPriorities"></select>
-            </div>
-            <div class="d-flex">
-                <button type="submit" class="btn btn-primary">Edit</button>
-                <a asp-controller="Projects" asp-action="Index"
-                   class="btn btn-danger ms-3">Cancel</a>
-            </div>
-        </div>
-    </div>
-</form>
-
+    </form>
+</div>
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");

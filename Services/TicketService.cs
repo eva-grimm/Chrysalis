@@ -2,7 +2,6 @@
 using Chrysalis.Enums;
 using Chrysalis.Models;
 using Chrysalis.Services.Interfaces;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chrysalis.Services
@@ -69,6 +68,8 @@ namespace Chrysalis.Services
                         .ThenInclude(c => c.User)
                     .Include(t => t.Attachments)
                         .ThenInclude(a => a.User)
+                    .Include(t => t.History)
+                        .ThenInclude(h => h.User)
                     .FirstOrDefaultAsync(t => t.Id == ticketId);
                 return ticket != null && ticket.Project!.CompanyId == companyId ? ticket : null;
             }
@@ -77,7 +78,7 @@ namespace Chrysalis.Services
                 throw;
             }
         }
-        
+
         public async Task<Ticket?> GetTicketByIdAsNoTrackingAsync(int? ticketId, int? companyId)
         {
             if (ticketId == null) return new Ticket();
@@ -103,7 +104,7 @@ namespace Chrysalis.Services
             }
         }
 
-        public async Task<IEnumerable<Ticket>> GetCompanyTicketsAsync(int? companyId)
+        public async Task<IEnumerable<Ticket>> GetTicketsAsync(int? companyId)
         {
             try
             {
@@ -131,21 +132,107 @@ namespace Chrysalis.Services
             }
         }
 
-		public async Task<IEnumerable<Ticket>> GetUserTicketsAsync(string? userId, int? companyId)
+        public async Task<IEnumerable<Ticket>> GetTicketsByUserIdAsync(string? userId, int? companyId)
         {
-			try
-			{
-                IEnumerable<Ticket> tickets = await GetCompanyTicketsAsync(companyId);
+            try
+            {
+                IEnumerable<Ticket> tickets = await GetTicketsAsync(companyId);
 
-				return tickets.Where(t => t.DeveloperUserId == userId);
-			}
-			catch (Exception)
-			{
-				throw;
-			}
-		}
+                return tickets.Where(t => t.DeveloperUserId == userId);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
 
-		public async Task<IEnumerable<TicketPriority>> GetTicketPrioritiesAsync()
+        public async Task<IEnumerable<Ticket>> GetActiveTicketsAsync(int? companyId)
+        {
+            IEnumerable<Project> projects = await _context.Projects
+                    .Where(p => p.CompanyId == companyId)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketPriority)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketStatus)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketType)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.Comments)
+                            .ThenInclude(c => c.User)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.Attachments)
+                            .ThenInclude(c => c.User)
+                    .ToListAsync();
+
+            return projects.SelectMany(p => p.Tickets)
+                .Where(t => !t.Archived
+                    && !t.ArchivedByProject);
+        }
+
+        public async Task<IEnumerable<Ticket>> GetUnassignedActiveTicketsAsync(int? companyId)
+        {
+            IEnumerable<Project> projects = await _context.Projects
+                    .Where(p => p.CompanyId == companyId)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketPriority)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketStatus)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketType)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.Comments)
+                            .ThenInclude(c => c.User)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.Attachments)
+                            .ThenInclude(c => c.User)
+                    .ToListAsync();
+
+            return projects.SelectMany(p => p.Tickets)
+                .Where(t => !t.Archived
+                    && !t.ArchivedByProject
+                    && t.DeveloperUserId == null);
+        }
+
+        public async Task<IEnumerable<Ticket>> GetArchivedTicketsAsync(int? companyId)
+        {
+            IEnumerable<Project> projects = await _context.Projects
+                    .Where(p => p.CompanyId == companyId)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketPriority)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketStatus)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketType)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.Comments)
+                            .ThenInclude(c => c.User)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.Attachments)
+                            .ThenInclude(c => c.User)
+                    .ToListAsync();
+
+            return projects.SelectMany(p => p.Tickets)
+                .Where(t => t.Archived
+                    || t.ArchivedByProject);
+        }
+
+        public async Task<BTUser?> GetDeveloperAsync(int? ticketId)
+        {
+            try
+            {
+                Ticket? ticket = await _context.Tickets
+                .Include(t => t.DeveloperUser)
+                    .FirstOrDefaultAsync(t => t.Id == ticketId);
+
+                return ticket!.DeveloperUser ?? null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public async Task<IEnumerable<TicketPriority>> GetTicketPrioritiesAsync()
         {
             return await _context.TicketPriorities.ToListAsync();
         }
@@ -170,17 +257,45 @@ namespace Chrysalis.Services
             return await _context.TicketTypes.ToListAsync();
         }
 
-        public async Task AddTicketAttachmentAsync(TicketAttachment ticketAttachment)
+        public async Task<bool> AddTicketAttachmentAsync(TicketAttachment ticketAttachment)
         {
             try
             {
                 await _context.AddAsync(ticketAttachment);
                 await _context.SaveChangesAsync();
+                return true;
             }
             catch (Exception)
             {
+                return false;
+            }
+        }
 
-                throw;
+        public async Task<bool> UpdateTicketAttachmentAsync(TicketAttachment ticketAttachment)
+        {
+            try
+            {
+                _context.Update(ticketAttachment);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteTicketAttachmentAsync(TicketAttachment ticketAttachment)
+        {
+            try
+            {
+                _context.Remove(ticketAttachment);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
 
@@ -195,7 +310,7 @@ namespace Chrysalis.Services
             }
             catch (Exception)
             {
-                throw;
+                return new TicketAttachment();
             }
         }
     }

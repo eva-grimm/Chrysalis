@@ -37,8 +37,9 @@ namespace Chrysalis.Controllers
 		}
 
 		// GET: Companies
-		public async Task<IActionResult> Index()
+		public async Task<IActionResult> Index(string? swalMessage = null)
 		{
+			ViewBag.SwalMessage = swalMessage;
 			return View(await _companyService.GetCompanyByIdAsync(_companyId));
 		}
 
@@ -49,26 +50,6 @@ namespace Chrysalis.Controllers
 				.FirstOrDefaultAsync(m => m.Id == _companyId);
 			if (company == null) return NotFound();
 
-			return View(company);
-		}
-
-		// GET: Companies/Create
-		[Authorize(Roles = "Admin")]
-		public IActionResult Create()
-		{
-			return View();
-		}
-
-		// POST: Companies/Create
-		[HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin")]
-		public async Task<IActionResult> Create([Bind("Name,Description,ImageData,ImageType")] Company company)
-		{
-			if (ModelState.IsValid)
-			{
-				_context.Add(company);
-				await _context.SaveChangesAsync();
-				return RedirectToAction(nameof(Index));
-			}
 			return View(company);
 		}
 
@@ -150,11 +131,11 @@ namespace Chrysalis.Controllers
 		{
 			string? swalMessage = string.Empty;
 			BTUser? currentUser = await _userManager.GetUserAsync(User);
-			BTUser? userToEdit = await _companyService.GetCompanyUserByIdAsync(userId);
+			BTUser? userToEdit = await _companyService.GetCompanyUserByIdAsync(userId, _companyId);
 
 			if (currentUser == userToEdit) throw new BadHttpRequestException("You cannot modify your own roles", 400);
 
-            IEnumerable<string>? currentRoles = await _roleService.GetUserRolesAsync(userToEdit);
+            IEnumerable<string> currentRoles = await _roleService.GetUserRolesAsync(userToEdit);
 
 			if (string.IsNullOrWhiteSpace(selected)) throw new BadHttpRequestException("You must select a role for the user.", 400);
 

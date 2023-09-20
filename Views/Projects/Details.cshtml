@@ -12,12 +12,20 @@
     BTUser? currentUser = await _UserManager.GetUserAsync(User);
     bool userIsAdmin = await _RoleService.IsUserInRoleAsync(currentUser, nameof(BTRoles.Admin));
     bool userOnProject = Model.Members.Any(u => u.Id == currentUser?.Id);
-    int historyIndex = 0;
 }
 
 <div class="row ps-3">
-    <div class="col-12 col-md-4">
-        <h3>Details</h3>
+    <div class="col-12 col-xl-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3>Details</h3>
+            @if (userIsAdmin)
+            {
+                <a asp-action="Edit" asp-controller="Projects"
+                   asp-route-Id="@Model.Id" class="btn btn-primary btn-sm">
+                    Edit Project
+                </a>
+            }
+        </div>
         <partial name="_ProjectDescriptionPartial" model="Model" />
         <partial name="_ProjectDetailsPartial" model="Model" />
         <div class="d-flex justify-content-between align-items-center">
@@ -41,7 +49,7 @@
             <partial name="_UserPartial" model="user" />
         }
     </div>
-    <div class="col-12 col-md-8">
+    <div class="col-12 col-xl-8">
         <div class="d-flex justify-content-between align-items-center">
             <h3>Tickets</h3>
             @if (userIsAdmin || userOnProject)
@@ -52,38 +60,40 @@
                 </a>
             }
         </div>
-        <partial name="_ProjectTicketsTablePartial" model="Model.Tickets" />
+        <partial name="_TicketsTablePartial" model="Model.Tickets" />
         <h3 class="mt-3">Ticket History</h3>
         <div class="card custom-card">
             <div class="card-body">
                 <div class="vtimeline">
-                    @foreach (TicketHistory? history in await _HistoryService.GetProjectTicketHistoriesAsync(Model.Id, Model.CompanyId))
-                    {
-                        if (historyIndex % 2 == 0)
+                    @{
+                        List<TicketHistory> histories = (await _HistoryService.GetProjectTicketHistoriesAsync(Model.Id, Model.CompanyId));
+                        @for (int i = 0; i < histories.Count() - 1; i++)
                         {
-                            <div class="timeline-wrapper timeline-wrapper-primary">
-                                <div class="timeline-badge"></div>
-                                <div class="timeline-panel">
-                                    <div class="timeline-heading">
-                                        <div class="timeline-title fw-bold">User: @history.User?.FullName</div>
-                                        <div class="timeline-body"><p>@history.Description</p></div>
+                            if (i % 2 == 0)
+                            {
+                                <div class="timeline-wrapper timeline-wrapper-primary">
+                                    <div class="timeline-badge"></div>
+                                    <div class="timeline-panel">
+                                        <div class="timeline-heading">
+                                            <div class="timeline-title fw-bold">User: @histories[i].User?.FullName</div>
+                                            <div class="timeline-body"><p>@histories[i].Description</p></div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="timeline-wrapper timeline-inverted timeline-wrapper-secondary">
-                                <div class="timeline-badge"></div>
-                                <div class="timeline-panel">
-                                    <div class="timeline-heading">
-                                        <div class="timeline-title fw-bold">User: @history.User?.FullName</div>
-                                        <div class="timeline-body"><p>@history.Description</p></div>
+                            }
+                            else
+                            {
+                                <div class="timeline-wrapper timeline-inverted timeline-wrapper-secondary">
+                                    <div class="timeline-badge"></div>
+                                    <div class="timeline-panel">
+                                        <div class="timeline-heading">
+                                            <div class="timeline-title fw-bold">User: @histories[i].User?.FullName</div>
+                                            <div class="timeline-body"><p>@histories[i].Description</p></div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            }
                         }
-                        historyIndex++;
                     }
                 </div>
             </div>

@@ -8,13 +8,14 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Chrysalis.Enums;
 using Chrysalis.Services;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Chrysalis.Controllers
 {
     [Authorize]
     public class ProjectsController : BaseController
     {
-        private readonly ApplicationDbContext _context;
         private readonly UserManager<BTUser> _userManager;
         private readonly IProjectService _projectService;
         private readonly ICompanyService _companyService;
@@ -22,15 +23,13 @@ namespace Chrysalis.Controllers
         private readonly ITicketService _ticketService;
         private readonly IRoleService _roleService;
 
-        public ProjectsController(ApplicationDbContext context,
-            UserManager<BTUser> userManager,
+        public ProjectsController(UserManager<BTUser> userManager,
             IProjectService projectService,
             ICompanyService companyService,
             IFileService fileService,
             ITicketService ticketService,
             IRoleService roleService)
         {
-            _context = context;
             _userManager = userManager;
             _projectService = projectService;
             _companyService = companyService;
@@ -54,26 +53,36 @@ namespace Chrysalis.Controllers
         public async Task<IActionResult> MyProjects()
         {
             BTUser? user = await _userManager.GetUserAsync(User) ?? new BTUser();
-            user = await _companyService.GetCompanyUserByIdAsync(user.Id);
-            return View(user.Projects);
+            ViewBag.ActionName = nameof(MyProjects);
+            return View(nameof(Index), await _projectService.GetProjectsByUserIdAsync(user.Id, _companyId));
         }
 
         [Authorize(Roles = nameof(BTRoles.Admin))]
         public async Task<IActionResult> AllProjects()
         {
-            return View(await _projectService.GetProjectsAsync(_companyId));
+            ViewBag.ActionName = nameof(AllProjects);
+            return View(nameof(Index), await _projectService.GetProjectsAsync(_companyId));
+        }
+
+        [Authorize(Roles = nameof(BTRoles.Admin))]
+        public async Task<IActionResult> ActiveProjects()
+        {
+            ViewBag.ActionName = nameof(ActiveProjects);
+            return View(nameof(Index), await _projectService.GetActiveProjectsAsync(_companyId));
         }
 
         [Authorize(Roles = nameof(BTRoles.Admin))]
         public async Task<IActionResult> UnassignedProjects()
         {
-            return View(await _projectService.GetUnassignedProjectsAsync(_companyId));
+            ViewBag.ActionName = nameof(UnassignedProjects);
+            return View(nameof(Index), await _projectService.GetUnassignedActiveProjectsAsync(_companyId));
         }
 
         [Authorize(Roles = nameof(BTRoles.Admin))]
         public async Task<IActionResult> ArchivedProjects()
         {
-            return View(await _projectService.GetArchivedProjectsAsync(_companyId));
+            ViewBag.ActionName = nameof(ArchivedProjects);
+            return View(nameof(Index), await _projectService.GetArchivedProjectsAsync(_companyId));
         }
 
         // GET: Projects/Details/5
@@ -126,6 +135,9 @@ namespace Chrysalis.Controllers
                     project.Created = DateTime.Now;
                     project.Archived = false;
 
+                    // remove excess space around comment due to editor
+                    project.Description = Regex.Replace(project.Description!, @"<[^>]*>", string.Empty);
+
                     if (project.ImageFile != null)
                     {
                         project.ImageData = await _fileService.ConvertFileToByteArrayAsync(project.ImageFile);
@@ -134,6 +146,10 @@ namespace Chrysalis.Controllers
 
                     bool success = await _projectService.AddProjectAsync(project);
                     if (!success) throw new BadHttpRequestException("There was an issue creating the Project", 500);
+
+                    // no PM selected
+                    // TO-DO: something more elegant!
+                    if (projectManagerId!.Equals("Unassigned")) return RedirectToAction(nameof(Index));
 
                     success = await _projectService.AddProjectManagerAsync(projectManagerId, project.Id);
                     if (!success) throw new BadHttpRequestException("There was an issue assigning the chosen PM.", 500);
@@ -211,8 +227,15 @@ namespace Chrysalis.Controllers
                         project.ImageType = project.ImageFile.ContentType;
                     }
 
+                    // remove excess space around comment due to editor
+                    project.Description = Regex.Replace(project.Description!, @"<[^>]*>", string.Empty);
+
                     bool success = await _projectService.UpdateProjectAsync(project);
                     if (!success) throw new BadHttpRequestException("There was an issue editing the Project", 500);
+
+                    // no PM selected
+                    // TO-DO: something more elegant!
+                    if (projectManagerId!.Equals("Unassigned")) return RedirectToAction(nameof(Index));
 
                     success = await _projectService.AddProjectManagerAsync(projectManagerId, project.Id);
                     if (!success) throw new BadHttpRequestException("There was an issue assigning the chosen PM.", 500);
@@ -243,7 +266,7 @@ namespace Chrysalis.Controllers
 
             IEnumerable<BTUser> projectManagers = await _roleService.GetUsersInRoleAsync(nameof(BTRoles.ProjectManager), _companyId);
             BTUser? currentPM = await _projectService.GetProjectManagerAsync(projectId);
-            ViewBag.ProjectManagers = new SelectList(projectManagers, "Id", "FullName", currentPM);
+            ViewBag.ProjectManagers = new SelectList(projectManagers, "Id", "FullName", currentPM?.Id);
 
             return View(project);
         }
@@ -257,10 +280,18 @@ namespace Chrysalis.Controllers
             Project? project = await _projectService.GetProjectAsync(projectId, _companyId)
                 ?? throw new BadHttpRequestException("No matching project found", 400);
 
-            if (string.IsNullOrEmpty(selectedPMId)) throw new BadHttpRequestException("You must select a PM.", 400);
+            if (string.IsNullOrEmpty(selectedPMId)) throw new BadHttpRequestException("You must select an option.", 400);
 
             try
             {
+                // no PM selected
+                // TO-DO: something more elegant!
+                if (selectedPMId!.Equals("Unassigned"))
+                {
+                    await _projectService.RemoveProjectManagerAsync(projectId);
+                    return RedirectToAction(nameof(Index));
+                }
+
                 bool success = await _projectService.AddProjectManagerAsync(selectedPMId, projectId);
 
                 if (!success) throw new BadHttpRequestException("There was an issue assigning the chosen PM.", 500);
@@ -286,10 +317,10 @@ namespace Chrysalis.Controllers
 
             ViewBag.Developers = new MultiSelectList(
                 await _roleService.GetUsersInRoleAsync(nameof(BTRoles.Developer), _companyId),
-                "Id", "FullName", project.Members);
+                "Id", "FullName");
             ViewBag.Submitters = new MultiSelectList(
                 await _roleService.GetUsersInRoleAsync(nameof(BTRoles.Submitter), _companyId),
-                "Id", "FullName", project.Members);
+                "Id", "FullName");
 
             return View(project);
         }
@@ -310,10 +341,13 @@ namespace Chrysalis.Controllers
                 BTUser? projectManager = await _projectService.GetProjectManagerAsync(projectId);
                 bool success = await _projectService.RemoveProjectMembersAsync(projectId, _companyId);
                 if (!success) throw new BadHttpRequestException("Encountered an issue changing project members", 500);
-                
-                // put project manager back
-                success = await _projectService.AddMemberToProjectAsync(projectManager, projectId);
-                if (!success) throw new BadHttpRequestException("Encountered an issue changing project members", 500);
+
+                if (projectManager != null)
+                {
+                    // put project manager back
+                    success = await _projectService.AddMemberToProjectAsync(projectManager, projectId);
+                    if (!success) throw new BadHttpRequestException("Encountered an issue changing project members", 500);
+                }
 
                 foreach (string memberId in developers)
                 {
@@ -383,6 +417,17 @@ namespace Chrysalis.Controllers
 
             swalMessage = "Success: The project was unarchived.";
             return RedirectToAction(nameof(Details), new { id = projectId, swalMessage });
+        }
+
+        public IActionResult StringReverse(string input)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            foreach (char c in input)
+            {
+                sb.Append(c);
+            }
+            return View(sb.ToString());
         }
     }
 }

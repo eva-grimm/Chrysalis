@@ -2,6 +2,7 @@
 @model IEnumerable<Ticket>
 @inject UserManager<BTUser> _UserManager
 @inject IRoleService _RoleService
+@inject ICompanyService _CompanyService
 @{
     BTUser? currentUser = await _UserManager.GetUserAsync(User);
     bool userIsAdmin = await _RoleService.IsUserInRoleAsync(currentUser, nameof(BTRoles.Admin));
@@ -10,10 +11,11 @@
 <div class="card custom-card overflow-hidden">
     <div class="card-body ps-3">
         <div class="table-responsive">
-            <table class="table text-nowrap table-hover">
+            <table id="ticketTable" class="table text-nowrap table-hover">
                 <thead>
                     <tr>
-                        <th>Title</th>
+                        <th>Ticket</th>
+                        <th>Submitted By</th>
                         <th>Developer</th>
                         <th>Status</th>
                         <th>Priority</th>
@@ -26,17 +28,22 @@
                     {
                         <tr>
                             <td>@ticket.Title</td>
+                            <td>@((await _CompanyService.GetCompanyUserByIdAsync(ticket.SubmitterUserId, ticket.Project?.CompanyId)).FullName)</td>
                             <td>
-                                @if (ticket.DeveloperUser == null)
+                                @if (ticket.DeveloperUserId == null && userIsAdmin)
                                 {
                                     <a class="badge bg-secondary" asp-action="AssignDeveloper"
                                        asp-controller="Tickets" asp-route-ticketId="@ticket.Id">
                                         Assign Developer
                                     </a>
                                 }
+                                else if (ticket.DeveloperUserId == null)
+                                {
+                                    <span class="badge bg-secondary">Unassigned</span>
+                                }
                                 else
                                 {
-                                    @ticket.DeveloperUser.FullName
+                                    @((await _CompanyService.GetCompanyUserByIdAsync(ticket.DeveloperUserId, ticket.Project?.CompanyId))?.FullName)
                                 }
                             </td>
                             <td>
@@ -48,28 +55,28 @@
                             <td>
                                 @ticket.Created.ToString("MM.dd.yyyy")
                             </td>
-                            <td class="d-flex">
-                                <a asp-action="Details" asp-controller="Ticket"
-                                   asp-route-id="ticket.Id" class="badge bg-info">
+                            <td>
+                                <a asp-action="Details" asp-controller="Tickets"
+                                   asp-route-ticketId="@ticket.Id" class="badge bg-info">
                                     <i class="bi bi-eye-fill"></i>
                                 </a>
                                 @if (userIsAdmin)
                                 {
-                                    <a asp-action="Edit" asp-controller="Ticket"
-                                       asp-route-id="ticket.Id" class="badge bg-secondary ms-1">
+                                    <a asp-action="Edit" asp-controller="Tickets"
+                                       asp-route-ticketId="@ticket.Id" class="badge bg-secondary ms-1">
                                         <i class="bi bi-pencil-fill"></i>
                                     </a>
                                     @if (!ticket.Archived || !ticket.ArchivedByProject)
                                     {
-                                        <a asp-action="ConfirmArchive" asp-controller="Ticket"
-                                           asp-route-ticketId="ticket.Id" class="badge bg-danger ms-1">
+                                        <a asp-action="ConfirmArchive" asp-controller="Tickets"
+                                           asp-route-ticketId="@ticket.Id" class="badge bg-danger ms-1">
                                             <i class="bi bi-archive-fill"></i>
                                         </a>
                                     }
                                     else
                                     {
-                                        <a asp-action="ConfirmUnarchive" asp-controller="Ticket"
-                                           asp-route-ticketId="ticket.Id" class="badge bg-danger ms-1">
+                                        <a asp-action="ConfirmUnarchive" asp-controller="Tickets"
+                                           asp-route-ticketId="@ticket.Id" class="badge bg-danger ms-1">
                                             <i class="bi bi-archive-fill"></i>
                                         </a>
                                     }
@@ -82,3 +89,7 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    
+}

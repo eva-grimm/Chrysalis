@@ -8,6 +8,8 @@ namespace Chrysalis.Services.Interfaces
         public Task<bool> AddNotificationAsync(Notification? notification);
         public Task<List<Notification>> GetUserNotificationsAsync(string? userId);
         public Task<List<Notification>> GetUnreadUserNotificationsAsync(string? userId);
+        public Task<bool> MarkNotificationReadAsync(int? notificationId, string? userId);
+        public Task<bool> MarkNotificationUnreadAsync(int? notificationId, string? userId);
         public Task<bool> NotificationsByRoleAsync(int? companyId, Notification? notification, BTRoles role);
         public Task<bool> NotifyDeveloperAsync(int? ticketId, string? developerId, string? senderId);
         public Task<bool> NewTicketNotificationAsync(int? ticketId, string? senderId);
