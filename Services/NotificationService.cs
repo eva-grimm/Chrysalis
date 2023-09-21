@@ -166,7 +166,7 @@ namespace Chrysalis.Services
                     RecipientId = developerId,
                     NotificationType = new NotificationType()
                     {
-                        Name = BTNotificationType.Ticket.ToString()
+                        Name = BTNotificationTypes.Ticket.ToString()
                     }
                 };
 
@@ -197,6 +197,7 @@ namespace Chrysalis.Services
                 Notification? notification = new()
                 {
                     TicketId = ticket.Id,
+                    ProjectId = ticket.ProjectId,
                     Title = "New Ticket Created",
                     Message = $"New Ticket: {ticket.Title} was created by {user.FullName} ",
                     Created = DataUtility.GetPostGresDate(DateTime.Now),
@@ -204,7 +205,7 @@ namespace Chrysalis.Services
                     RecipientId = projectManager?.Id,
                     NotificationType = new NotificationType()
                     {
-                        Name = BTNotificationType.Ticket.ToString()
+                        Name = BTNotificationTypes.Ticket.ToString()
                     }
                 };
 
@@ -253,7 +254,7 @@ namespace Chrysalis.Services
                     RecipientId = projectManager?.Id,
                     NotificationType = new NotificationType()
                     {
-                        Name = BTNotificationType.Ticket.ToString()
+                        Name = BTNotificationTypes.Ticket.ToString()
                     }
                 };
 

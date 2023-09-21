@@ -963,8 +963,8 @@ namespace Chrysalis.Data
             try
             {
                 IList<Models.NotificationType> notificationTypes = new List<Models.NotificationType>() {
-                     new Models.NotificationType() { Name = Enums.BTNotificationType.Project.ToString() },
-                     new Models.NotificationType() { Name = Enums.BTNotificationType.Ticket.ToString() }
+                     new Models.NotificationType() { Name = Enums.BTNotificationTypes.Project.ToString() },
+                     new Models.NotificationType() { Name = Enums.BTNotificationTypes.Ticket.ToString() }
                 };
 
                 var dbNotificationTypes = context.NotificationTypes.Select(c => c.Name).ToList();

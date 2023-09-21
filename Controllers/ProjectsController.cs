@@ -57,7 +57,6 @@ namespace Chrysalis.Controllers
             return View(nameof(Index), await _projectService.GetProjectsByUserIdAsync(user.Id, _companyId));
         }
 
-        [Authorize(Roles = nameof(BTRoles.Admin))]
         public async Task<IActionResult> AllProjects()
         {
             ViewBag.ActionName = nameof(AllProjects);
@@ -100,7 +99,7 @@ namespace Chrysalis.Controllers
         }
 
         // GET: Projects/Create
-        [Authorize(Roles = nameof(BTRoles.Admin))]
+        [Authorize(Policy = nameof(BTPolicies.AdPm))]
         public async Task<IActionResult> Create()
         {
             IEnumerable<BTUser> projectManagers = await _roleService.GetUsersInRoleAsync(nameof(BTRoles.ProjectManager), _companyId);
@@ -111,7 +110,7 @@ namespace Chrysalis.Controllers
         }
 
         // POST: Projects/Create
-        [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = nameof(BTRoles.Admin))]
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = nameof(BTPolicies.AdPm))]
         public async Task<IActionResult> Create([Bind("Name,Description,StartDate,EndDate,ProjectPriorityId,ImageFile")] Project project, string? projectManagerId)
         {
             ModelState.Remove("CompanyId");
@@ -285,8 +284,7 @@ namespace Chrysalis.Controllers
             try
             {
                 // no PM selected
-                // TO-DO: something more elegant!
-                if (selectedPMId!.Equals("Unassigned"))
+                if (selectedPMId?.Equals("Unassigned") == true)
                 {
                     await _projectService.RemoveProjectManagerAsync(projectId);
                     return RedirectToAction(nameof(Index));
@@ -315,12 +313,18 @@ namespace Chrysalis.Controllers
                 .GetProjectAsync(projectId, _companyId)
                 ?? throw new BadHttpRequestException("No matching project found", 400);
 
-            ViewBag.Developers = new MultiSelectList(
-                await _roleService.GetUsersInRoleAsync(nameof(BTRoles.Developer), _companyId),
-                "Id", "FullName");
-            ViewBag.Submitters = new MultiSelectList(
-                await _roleService.GetUsersInRoleAsync(nameof(BTRoles.Submitter), _companyId),
-                "Id", "FullName");
+            //ViewBag.Developers = new MultiSelectList(
+            //    await _roleService.GetUsersInRoleAsync(nameof(BTRoles.Developer), _companyId),
+            //    "Id", "FullName", 
+            //    (await _roleService.GetUsersInRoleAsync(nameof(BTRoles.Developer), _companyId))
+            //        .Where(u => u.Projects.Any(p => p.Id == projectId))
+            //    );
+            //ViewBag.Submitters = new MultiSelectList(
+            //    await _roleService.GetUsersInRoleAsync(nameof(BTRoles.Submitter), _companyId),
+            //    "Id", "FullName",
+            //    (await _roleService.GetUsersInRoleAsync(nameof(BTRoles.Submitter), _companyId))
+            //        .Where(u => u.Projects.Any(p => p.Id == projectId))
+            //    );
 
             return View(project);
         }
@@ -363,6 +367,8 @@ namespace Chrysalis.Controllers
                 }
                 success = await _projectService.UpdateProjectAsync(project);
                 if (!success) throw new BadHttpRequestException("Encountered an issue changing project members", 500);
+                
+                return RedirectToAction(nameof(Details), new { id = projectId });
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -373,7 +379,6 @@ namespace Chrysalis.Controllers
             {
                 throw new BadHttpRequestException("Encountered an issue changing project members", 500);
             }
-            return RedirectToAction(nameof(AssignMembers), new { projectId });
         }
 
         [Authorize(Policy = nameof(BTPolicies.AdPm))]
@@ -385,8 +390,8 @@ namespace Chrysalis.Controllers
             return View(model);
         }
 
-        [Authorize(Policy = nameof(BTPolicies.AdPm))]
-        public async Task<IActionResult> ArchiveProject(int? projectId)
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = nameof(BTPolicies.AdPm))]
+        public async Task<IActionResult> ConfirmArchive(int projectId)
         {
             string? swalMessage = string.Empty;
 
@@ -406,8 +411,8 @@ namespace Chrysalis.Controllers
             return View(model);
         }
 
-        [Authorize(Policy = nameof(BTPolicies.AdPm))]
-        public async Task<IActionResult> UnarchiveProject(int? projectId)
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = nameof(BTPolicies.AdPm))]
+        public async Task<IActionResult> ConfirmUnarchive(int projectId)
         {
             string? swalMessage = string.Empty;
 

@@ -14,16 +14,22 @@ namespace Chrysalis.Controllers
         private readonly UserManager<BTUser> _userManager;
         private readonly ITicketService _ticketService;
         private readonly ICompanyService _companyService;
+        private readonly IRoleService _roleService;
+        private readonly ILookupService _lookupService;
 
         public HomeController(ILogger<HomeController> logger,
             UserManager<BTUser> userManager,
             ITicketService ticketService,
-            ICompanyService companyService)
+            ICompanyService companyService,
+            IRoleService roleService,
+            ILookupService lookupService)
         {
             _logger = logger;
             _userManager = userManager;
             _ticketService = ticketService;
             _companyService = companyService;
+            _roleService = roleService;
+            _lookupService = lookupService;
         }
 
         // Dashboard
@@ -35,23 +41,21 @@ namespace Chrysalis.Controllers
 
         public async Task<IActionResult> Dashboard()
         {
-            BTUser? currentUser = await _companyService.GetCompanyUserByIdAsync(_userManager.GetUserId(User), _companyId);
-            IEnumerable<Ticket> userTickets = await _ticketService.GetTicketsByUserIdAsync(currentUser.Id, _companyId);
-            IEnumerable<Ticket> importantTickets = userTickets
-                .Where(t => t.TicketStatusId != (int)BTTicketStatuses.Resolved)
-                .Where(t => t.TicketPriorityId != (int)BTTicketPriorities.High
-                    || t.TicketPriorityId != (int)BTTicketPriorities.Urgent);
-
+            BTUser? currentUser = await _companyService.GetCompanyUserByIdAsync(_userId, _companyId);
             ViewBag.Title = "Your Dashboard";
-            ViewBag.CurrentUser = currentUser;
-            ViewBag.UserTickets = userTickets;
-            ViewBag.ImportantTickets = importantTickets;
-            return View();
+
+            return View(currentUser);
         }
 
         public IActionResult LandingPage()
         {
             return View();
+        }
+
+        public async Task<IActionResult> Profile(string? userId)
+        {
+            BTUser user = await _companyService.GetCompanyUserByIdAsync(userId, _companyId);
+            return View(user);
         }
 
         public IActionResult ChrysalisException(string? exceptionMessage, int? errorCode)

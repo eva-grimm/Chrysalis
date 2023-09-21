@@ -2,6 +2,7 @@
 @inject IProjectService _ProjectService
 @inject IFileService _FileService
 @inject IRoleService _RoleService
+@inject ICompanyService _CompanyService
 
 @{
     ViewData["Title"] = "Project Members";
@@ -20,12 +21,19 @@
         <div class="col-12 col-md-4">
             <h3>Change Developers?</h3>
             <select class="form-control select2" multiple
-                    name="developers" asp-items="ViewBag.Developers">
-                @foreach (BTUser user in Model.Members)
+                    name="developers" @* asp-items="ViewBag.Developers" *@>
+                @foreach (BTUser user in await _CompanyService.GetCompanyUsersAsync(Model.CompanyId))
                 {
-                    @if (await _RoleService.IsUserInRoleAsync(user, nameof(BTRoles.Developer)))
+                    @if (await _RoleService.IsUserInRoleAsync(user, nameof(BTRoles.Developer))
+                        && Model.Members.Any(m => m.Id.Equals(user.Id)))
                     {
                         <option selected value="@user.Id">
+                            @user.FullName
+                        </option>
+                    }
+                    else if (await _RoleService.IsUserInRoleAsync(user, nameof(BTRoles.Developer)))
+                    {
+                        <option value="@user.Id">
                             @user.FullName
                         </option>
                     }
@@ -35,12 +43,19 @@
         <div class="col-12 col-md-4">
             <h3>Change Submitters?</h3>
             <select class="form-control select2" multiple
-                    name="submitters" asp-items="ViewBag.Submitters">
-                @foreach (BTUser user in Model.Members)
+                    name="submitters" @* asp-items="ViewBag.Submitters" *@>
+                @foreach (BTUser user in await _CompanyService.GetCompanyUsersAsync(Model.CompanyId))
                 {
-                    @if (await _RoleService.IsUserInRoleAsync(user, nameof(BTRoles.Submitter)))
+                    @if (await _RoleService.IsUserInRoleAsync(user, nameof(BTRoles.Submitter))
+                        && Model.Members.Any(m => m.Id.Equals(user.Id)))
                     {
                         <option selected value="@user.Id">
+                            @user.FullName
+                        </option>
+                    }
+                    else if (await _RoleService.IsUserInRoleAsync(user, nameof(BTRoles.Submitter)))
+                    {
+                        <option value="@user.Id">
                             @user.FullName
                         </option>
                     }

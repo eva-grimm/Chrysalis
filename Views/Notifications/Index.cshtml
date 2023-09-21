@@ -9,9 +9,12 @@
 <div class="card custom-card">
     <div class="main-content-app">
         <div class="main-content-left main-content-left-chat">
+            <div class="card-body">
+                @* Search bar up here... *@
+            </div>
             <nav class="nav main-nav-line main-nav-line-chat card-body">
                 <a class="nav-link active" data-bs-toggle="tab" href="#allNotifications">All</a>
-                <a class="nav-link active" data-bs-toggle="tab" href="#unread">Unread</a>
+                <a class="nav-link" data-bs-toggle="tab" href="#unread">Unread</a>
                 @* <a class="nav-link" data-bs-toggle="tab" href="#byTicket">By Ticket</a>
                 <a class="nav-link" data-bs-toggle="tab" href="#byProject">By Project</a> *@
             </nav>
@@ -19,34 +22,34 @@
                 <div id="allNotifications" class="tab-pane active">
                     @foreach (Notification? notification in await _NotificationService.GetUserNotificationsAsync(Model.Id))
                     {
-                        <div class="media new selected">
+                        <div class="media new">
                             <div class="main-img-user">
                                 <img alt="avatar" src="@_FileService.ConvertByteArrayToFile(notification.Sender?.ImageData,notification.Sender?.ImageType,DefaultImage.BTUserImage)" />
                             </div>
                             <div class="media-body">
                                 <div class="media-contact-name">
                                     <span>@notification.Sender?.FullName</span>
-                                    <span class="ps-3">@notification.Title: @notification.Message</span>
                                 </div>
-                                <div>
-                                    <span>
-                                        @if (notification.HasBeenViewed)
-                                        {
-                                            <form asp-controller="Notifications" asp-action="MarkUnread">
-                                                <input type="hidden" name="notificationId" value="@notification.Id" />
-                                                <button type="submit" class="badge bg-secondary"><i class="bi bi-eye-slash-fill"></i></button>
-                                            </form>
-                                        }
-                                        else
-                                        {
-                                            <form asp-controller="Notifications" asp-action="MarkRead">
-                                                <input type="hidden" name="notificationId" value="@notification.Id" />
-                                                <button type="submit" class="badge bg-secondary"><i class="bi bi-eye-fill"></i></button>
-                                            </form>
-                                        }
-                                    </span>
-                                    <span class="badge bg-primary">@notification.Created.ToString("MM.dd.yyyy t")</span>
-                                </div>
+                                <p class="ps-3">@notification.Title: @notification.Message</p>
+                            </div>
+                            <div class="d-flex">
+                                <span>@notification.Created.ToString("MM.dd.yyyy hh:mm tt")</span>
+                                <span class="ms-3">
+                                    @if (notification.HasBeenViewed)
+                                    {
+                                        <form asp-controller="Notifications" asp-action="MarkUnread">
+                                            <input type="hidden" name="notificationId" value="@notification.Id" />
+                                            <button type="submit" class="badge bg-secondary"><i class="bi bi-eye-slash-fill"></i></button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-controller="Notifications" asp-action="MarkRead">
+                                            <input type="hidden" name="notificationId" value="@notification.Id" />
+                                            <button type="submit" class="badge bg-secondary"><i class="bi bi-eye-fill"></i></button>
+                                        </form>
+                                    }
+                                </span>
                             </div>
                         </div>
                     }
@@ -90,3 +93,6 @@
         </div>
     </div>
 </div>
+@section Scripts {
+
+}

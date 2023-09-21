@@ -33,6 +33,7 @@ builder.Services.AddScoped<ITicketHistoryService, TicketHistoryService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IEmailSender, EmailService>();
 builder.Services.AddScoped<IInviteService, InviteService>();
+builder.Services.AddScoped<ILookupService, LookupService>();
 
 // populate email settings
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));

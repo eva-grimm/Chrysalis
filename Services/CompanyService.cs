@@ -74,6 +74,17 @@ namespace Chrysalis.Services
                     && u.CompanyId == companyId)
                 ?? new BTUser();
         }
+        
+        public async Task<BTUser> GetCompanyUserByIdAsNoTrackingAsync(string? userId, int? companyId)
+        {
+            if (string.IsNullOrEmpty(userId)) return new BTUser();
+
+            return await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == userId
+                    && u.CompanyId == companyId)
+                ?? new BTUser();
+        }
 
         /// <summary>
         /// Returns all employees of the current user's company.

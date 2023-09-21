@@ -64,9 +64,10 @@
         </div>
     </div>
     <div class="col-12 d-flex">
+    <form asp-action="ConfirmUnarchive" asp-controller="Projects">
         <input type="hidden" name="projectId" value="@Model.Id" />
-        <a asp-action="UnarchiveProject" asp-route-projectId="@Model.Id"
-           class="btn btn-primary text-decoration-none">Unarchive</a>
-        <a asp-action="Index" class="btn btn-primary text-decoration-none ms-3">Cancel</a>
+        <a asp-action="Index" class="btn btn-primary ripple text-decoration-none">Cancel</a>
+        <button type="submit" class="btn btn-danger ripple text-decoration-none ms-3">Unarchive</button>
+    </form>
     </div>
 </div>

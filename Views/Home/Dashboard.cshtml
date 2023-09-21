@@ -1,14 +1,22 @@
 ﻿@using Microsoft.AspNetCore.Identity;
 @using Chrysalis.Enums
+@model BTUser
 @inject UserManager<BTUser> _UserManager
 @inject ICompanyService _CompanyService
 @inject ITicketService _TicketService
 @inject IFileService _FileService
-
+@inject IProjectService _ProjectService
+@inject ILookupService _LookupService
 @{
-    BTUser currentUser = ViewBag.CurrentUser;
-    IEnumerable<Ticket> userTickets = ViewBag.UserTickets;
-    IEnumerable<Ticket> importantTickets = ViewBag.ImportantTickets;
+    TicketStatus resolvedStatus = await _LookupService.GetTicketStatusByEnumAsync(BTTicketStatuses.Resolved);
+    TicketPriority highPriority = await _LookupService.GetTicketPriorityByEnumAsync(BTTicketPriorities.High);
+    TicketPriority urgentPriority = await _LookupService.GetTicketPriorityByEnumAsync(BTTicketPriorities.Urgent);
+    IEnumerable<Ticket> userTickets = await _TicketService.GetTicketsByUserIdAsync(Model.Id, Model.CompanyId);
+    IEnumerable<Ticket> importantTickets = userTickets
+        .Where(t => t.TicketStatusId != resolvedStatus.Id
+            && (t.TicketPriorityId == highPriority.Id
+            || t.TicketPriorityId == urgentPriority.Id))
+        .ToList();
 }
 
 <!--Row-->
@@ -19,29 +27,264 @@
                 <div class="row">
                     <div class="col-12">
                         <h4 class="d-flex  mb-3">
-                            <span class="font-weight-bold text-white">Hello, @currentUser.FullName!</span>
+                            <span class="font-weight-bold text-white">Hello, @Model.FullName!</span>
                         </h4>
-                        <p class="tx-white-7 mb-1">
-                            You have @userTickets.Count() tickets assigned to you
-                            @if (importantTickets.Count() == 1)
-                            {
-                                <span>, and @importantTickets.Count() unresolved ticket of at least high priority.</span>
-                            }
-                            else if (importantTickets.Count() > 1)
-                            {
-                                <span>, and @importantTickets.Count() unresolved tickets of at least high priority.</span>
-                            }
-                            else
-                            {
-                                <span>.</span>
-                            }
-                        </p>
+                        @if (User.IsInRole(nameof(BTRoles.Admin)))
+                        {
+                            <p class="tx-white-7 mb-1">
+                                @if (userTickets.Count() == 1)
+                                {
+                                    <span>Your company has @userTickets.Count() active ticket.</span>
+                                }
+                                else
+                                {
+                                    <span>Your company has @userTickets.Count() active tickets.</span>
+                                }
+                                @if (importantTickets.Count() == 1)
+                                {
+                                    <span> @importantTickets.Count() ticket is unresolved and of at least high priority.</span>
+                                }
+                                else if (importantTickets.Count() > 1)
+                                {
+                                    <span> @importantTickets.Count() tickets are unresolved and of at least high priority.</span>
+                                }
+                            </p>
+                        }
+                        else if (User.IsInRole(nameof(BTRoles.ProjectManager)))
+                        {
+                            <p class="tx-white-7 mb-1">
+                                @if (userTickets.Count() == 1)
+                                {
+                                    <span>Your projects have @userTickets.Count() active ticket.</span>
+                                }
+                                else
+                                {
+                                    <span>Your projects have @userTickets.Count() active tickets.</span>
+
+                                }
+                                @if (importantTickets.Count() == 1)
+                                {
+                                    <span> @importantTickets.Count() ticket is unresolved and of at least high priority.</span>
+                                }
+                                else if (importantTickets.Count() > 1)
+                                {
+                                    <span> @importantTickets.Count() tickets are unresolved and of at least high priority.</span>
+                                }
+                            </p>
+                        }
+                        else if (User.IsInRole(nameof(BTRoles.Developer)))
+                        {
+                            <p class="tx-white-7 mb-1">
+                                @if (userTickets.Count() == 1)
+                                {
+                                    <span>You have @userTickets.Count() active ticket assigned to you.</span>
+                                }
+                                else
+                                {
+                                    <span>You have @userTickets.Count() active tickets assigned to you.</span>
+
+                                }
+                                @if (importantTickets.Count() == 1)
+                                {
+                                    <span> @importantTickets.Count() ticket is unresolved and of at least high priority.</span>
+                                }
+                                else if (importantTickets.Count() > 1)
+                                {
+                                    <span> @importantTickets.Count() tickets are unresolved and of at least high priority.</span>
+                                }
+                            </p>
+                        }
+                        else if (User.IsInRole(nameof(BTRoles.Submitter)))
+                        {
+                            <p class="tx-white-7 mb-1">
+                                @if (userTickets.Count() == 1)
+                                {
+                                    <span>Your have @userTickets.Count() active ticket open.</span>
+                                }
+                                else
+                                {
+                                    <span>Your have @userTickets.Count() active tickets open.</span>
+
+                                }
+                                @if (importantTickets.Count() == 1)
+                                {
+                                    <span> @importantTickets.Count() ticket is of at least high priority.</span>
+                                }
+                                else if (importantTickets.Count() > 1)
+                                {
+                                    <span> @importantTickets.Count() tickets are of at least high priority.</span>
+                                }
+                                else
+                                {
+                                    <span>.</span>
+                                }
+                            </p>
+                        }
                     </div>
-                    @* <img src="~/img/DefaultUserImage-Transparent.png" alt="Model User"
-                         class="rounded" style="width:250px;" /> *@
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="card custom-card">
+            <div class="card-body">
+                <div>
+                    <h6 class="main-content-label mb-3">Active Ticket Distribution by Project</h6>
+                </div>
+                <div class="ht-200 ht-sm-300" id="ticketDistributionPie"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="card custom-card">
+            <div class="card-body">
+                <div>
+                    <h6 class="main-content-label mb-3">Active Tickets by Priority</h6>
+                </div>
+                <div class="ht-200 ht-sm-300" id="ticketsPrioritiesPie"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="row">
+                <div class="col-xl-3 col-lg-6 col-sm-6 pe-0 ps-0 border-end">
+                    <div class="card-body text-center">
+                        <div class="icon-service bg-primary-transparent rounded-circle text-primary">
+                            <i class="bi bi-easel-fill"></i>
+                        </div>
+                        <p class="mb-1 text-muted">Active Projects</p>
+                        <h3 class="mb-0">@((await _ProjectService.GetActiveProjectsAsync(Model.CompanyId)).Count())</h3>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-lg-6 col-sm-6 pe-0 ps-0 border-end">
+                    <div class="card-body text-center">
+                        <div class="icon-service bg-danger-transparent rounded-circle text-danger">
+                            <i class="bi bi-hourglass-bottom"></i>
+                        </div>
+                        <p class="mb-1 text-muted">Projects Ending Soon</p>
+                        <h3 class="mb-0">@((await _ProjectService.GetActiveProjectsAsync(Model.CompanyId))
+                            .Where(p => DateTime.Now.Subtract(p.EndDate).TotalDays <= 30)
+                            .Count())</h3>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-lg-6 col-sm-6 pe-0 ps-0 border-end">
+                    <div class="card-body text-center">
+                        <div class="icon-service bg-info-transparent rounded-circle text-info">
+                            <i class="bi bi-list-task"></i>
+                        </div>
+                        <p class="mb-1 text-muted">Active Tickets</p>
+                        <h3 class="mb-0">@((await _TicketService.GetActiveTicketsAsync(Model.CompanyId)).Count())</h3>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-lg-6 col-sm-6 pe-0 ps-0">
+                    <div class="card-body text-center">
+                        <div class="icon-service bg-secondary-transparent rounded-circle text-secondary">
+                            <i class="bi bi-person-x"></i>
+                        </div>
+                        <p class="mb-1 text-muted">Unassigned Tickets</p>
+                        <h3 class="mb-0">@((await _TicketService.GetUnassignedActiveTicketsAsync(Model.CompanyId)).Count())</h3>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 <!--Row -->
+@section Scripts{
+    @*Pie Chart Scripts*@
+    <script>
+        $(function () {
+            'use strict';
+            var ticketsByProjectData = [
+        @{
+            IEnumerable<Project> projectsInput = await _ProjectService.GetActiveProjectsAsync(Model.CompanyId);
+            List<Project> projects = projectsInput.ToList();
+            for (int i = 0; i < projects.Count(); i++)
+            {
+                int colorDeterminer = i % 5;
+                string colorSelection = string.Empty;
+                switch (colorDeterminer)
+                {
+                    case 0:
+                        colorSelection = "#6259ca";
+                        break;
+                    case 1:
+                        colorSelection = "#53caed";
+                        break;
+                    case 2:
+                        colorSelection = "#01b8ff";
+                        break;
+                    case 3:
+                        colorSelection = "#f16d75";
+                        break;
+                    case 4:
+                        colorSelection = "#29ccbb";
+                        break;
+                };
+                <text>{ label: '@projects[i].Name', data: [[1, @projects[i].Tickets.Count()]], color: '@colorSelection' }, </text>
+            }
+        }];
+            $.plot('#ticketDistributionPie', ticketsByProjectData, {
+                series: {
+                    pie: {
+                        show: true,
+                        radius: 1,
+                        label: {
+                            show: true,
+                            radius: 2 / 3,
+                            formatter: labelFormatter,
+                            threshold: 0.1
+                        }
+                    }
+                },
+                grid: {
+                    hoverable: true,
+                    clickable: true
+                }
+            });
+
+            var ticketPrioritiesData = [
+        @{
+            IEnumerable<Ticket> tickets = await _TicketService.GetActiveTicketsAsync(Model.CompanyId);
+            TicketPriority lowPriority = await _LookupService.GetTicketPriorityByEnumAsync(BTTicketPriorities.Low);
+            TicketPriority mediumPriority = await _LookupService.GetTicketPriorityByEnumAsync(BTTicketPriorities.Medium);
+            TicketPriority highPriority = await _LookupService.GetTicketPriorityByEnumAsync(BTTicketPriorities.High);
+            TicketPriority urgentPriority = await _LookupService.GetTicketPriorityByEnumAsync(BTTicketPriorities.Urgent);
+            IEnumerable<Ticket> lowTickets = tickets.Where(t => t.TicketPriority == lowPriority);
+            IEnumerable<Ticket> mediumTickets = tickets.Where(t => t.TicketPriority == mediumPriority);
+            IEnumerable<Ticket> highTickets = tickets.Where(t => t.TicketPriority == highPriority);
+            IEnumerable<Ticket> urgentTickets = tickets.Where(t => t.TicketPriority == urgentPriority);
+
+            <text>
+                    { label: 'Low', data: [[1, @lowTickets.Count()]], color: '#6259ca' },
+                    { label: 'Medium', data: [[1, @mediumTickets.Count()]], color: '#53caed' },
+                    { label: 'High', data: [[1, @highTickets.Count()]], color: '#01b8ff' },
+                    { label: 'Urgent', data: [[1, @urgentTickets.Count()]], color: '#f16d75' },
+            </text>
+        }];
+            $.plot('#ticketsPrioritiesPie', ticketPrioritiesData, {
+                series: {
+                    pie: {
+                        show: true,
+                        radius: 1,
+                        label: {
+                            show: true,
+                            radius: 2 / 3,
+                            formatter: labelFormatter,
+                            threshold: 0.1
+                        }
+                    }
+                },
+                grid: {
+                    hoverable: true,
+                    clickable: true
+                }
+            });
+
+            function labelFormatter(label, series) {
+                return '<div style="font-size:8pt; text-align:center; padding:2px; color:white;">' + label + '<br/>' + Math.round(series.percent) + '%</div>';
+            }
+        });
+    </script>
+}

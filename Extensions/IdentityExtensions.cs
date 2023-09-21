@@ -10,5 +10,11 @@ namespace Chrysalis.Extensions
             Claim claim = ((ClaimsIdentity)identity).FindFirst("CompanyId")!;
             return int.Parse(claim.Value);
         }
+
+        public static string GetUserId(this IIdentity identity)
+        {
+            Claim claim = ((ClaimsIdentity)identity).FindFirst("UserId")!;
+            return claim.Value;
+        }
     }
 }

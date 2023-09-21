@@ -1,4 +1,5 @@
-﻿$('#projectTable').DataTable({
+﻿// Data tables
+$('#projectTable').DataTable({
     responsive: true,
     language: {
         searchPlaceholder: 'Search...',

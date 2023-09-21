@@ -57,7 +57,7 @@ namespace Chrysalis.Services
                             NewValue = newTicket.Title,
                             Created = DataUtility.GetPostGresDate(DateTime.Now),
                             UserId = userId,
-                            Description = $"Changed ticket title from: {oldTicket.Title} to : {newTicket.Title}"
+                            Description = $"Changed ticket title from '{oldTicket.Title}' to '{newTicket.Title}'"
                         };
 
                         await _context.TicketHistories.AddAsync(history);
@@ -74,14 +74,14 @@ namespace Chrysalis.Services
                             NewValue = newTicket.Description,
                             Created = DataUtility.GetPostGresDate(DateTime.Now),
                             UserId = userId,
-                            Description = $"Changed ticket description from: {oldTicket.Description} to : {newTicket.Description}"
+                            Description = $"Changed ticket description from '{oldTicket.Description}' to '{newTicket.Description}'"
                         };
 
                         await _context.TicketHistories.AddAsync(history);
                     }
 
                     // Check Ticket Priority
-                    if (oldTicket.TicketPriority != newTicket.TicketPriority)
+                    if (oldTicket.TicketPriorityId != newTicket.TicketPriorityId)
                     {
                         TicketHistory history = new()
                         {
@@ -91,14 +91,14 @@ namespace Chrysalis.Services
                             NewValue = newTicket.TicketPriority?.Name,
                             Created = DataUtility.GetPostGresDate(DateTime.Now),
                             UserId = userId,
-                            Description = $"Changed ticket priority from: {oldTicket.TicketPriority?.Name} to : {newTicket.TicketPriority?.Name}"
+                            Description = $"Changed ticket priority from '{oldTicket.TicketPriority?.Name}' to '{newTicket.TicketPriority?.Name}'"
                         };
 
                         await _context.TicketHistories.AddAsync(history);
                     }
 
                     // Check Ticket Status
-                    if (oldTicket.TicketStatus != newTicket.TicketStatus)
+                    if (oldTicket.TicketStatusId != newTicket.TicketStatusId)
                     {
                         TicketHistory history = new()
                         {
@@ -108,14 +108,14 @@ namespace Chrysalis.Services
                             NewValue = newTicket.TicketStatus?.Name,
                             Created = DataUtility.GetPostGresDate(DateTime.Now),
                             UserId = userId,
-                            Description = $"Changed ticket status from: {oldTicket.TicketStatus?.Name} to : {newTicket.TicketStatus?.Name}"
+                            Description = $"Changed ticket status from '{oldTicket.TicketStatus?.Name}' to '{newTicket.TicketStatus?.Name}'"
                         };
 
                         await _context.TicketHistories.AddAsync(history);
                     }
 
                     // Check Ticket Type
-                    if (oldTicket.TicketType != newTicket.TicketType)
+                    if (oldTicket.TicketTypeId != newTicket.TicketTypeId)
                     {
                         TicketHistory history = new()
                         {
@@ -125,7 +125,7 @@ namespace Chrysalis.Services
                             NewValue = newTicket.TicketType?.Name,
                             Created = DataUtility.GetPostGresDate(DateTime.Now),
                             UserId = userId,
-                            Description = $"Changed ticket type from: {oldTicket.TicketType?.Name} to : {newTicket.TicketType?.Name}"
+                            Description = $"Changed ticket type from '{oldTicket.TicketType?.Name}' to '{newTicket.TicketType?.Name}'"
                         };
 
                         await _context.TicketHistories.AddAsync(history);
@@ -142,7 +142,7 @@ namespace Chrysalis.Services
                             NewValue = newTicket.DeveloperUser?.FullName,
                             Created = DataUtility.GetPostGresDate(DateTime.Now),
                             UserId = userId,
-                            Description = $"Changed ticket developer from: {oldTicket.DeveloperUser?.FullName} to : {newTicket.DeveloperUser?.FullName}"
+                            Description = $"Changed ticket developer from '{oldTicket.DeveloperUser?.FullName ?? "Not Assigned"}' to '{newTicket.DeveloperUser?.FullName}'"
                         };
 
                         await _context.TicketHistories.AddAsync(history);

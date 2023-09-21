@@ -64,9 +64,10 @@
         </div>
     </div>
     <div class="col-12 d-flex mb-3">
-        <input type="hidden" name="projectId" value="@Model.Id" />
-            <a asp-action="ArchiveProject" asp-route-projectId="@Model.Id"
-               class="btn btn-primary text-decoration-none">Archive</a>
-        <a asp-action="Index" class="btn btn-primary text-decoration-none ms-3">Cancel</a>
+        <form asp-action="ConfirmArchive" asp-controller="Projects">
+            <input type="hidden" name="projectId" value="@Model.Id" />
+            <a asp-action="Index" class="btn btn-primary ripple text-decoration-none">Cancel</a>
+            <button type="submit" class="btn btn-danger ripple ms-3">Archive</button>
+        </form>
     </div>
 </div>

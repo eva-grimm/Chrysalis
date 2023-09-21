@@ -4,9 +4,11 @@
 
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Chrysalis.Models;
+using Chrysalis.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -17,13 +19,16 @@ namespace Chrysalis.Areas.Identity.Pages.Account.Manage
     {
         private readonly UserManager<BTUser> _userManager;
         private readonly SignInManager<BTUser> _signInManager;
+        private IFileService _fileService;
 
         public IndexModel(
             UserManager<BTUser> userManager,
-            SignInManager<BTUser> signInManager)
+            SignInManager<BTUser> signInManager,
+            IFileService fileService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _fileService = fileService;
         }
 
         /// <summary>
@@ -52,6 +57,23 @@ namespace Chrysalis.Areas.Identity.Pages.Account.Manage
         /// </summary>
         public class InputModel
         {
+            [Required, Display(Name = "First Name")]
+            [StringLength(50, ErrorMessage = "The {0} must be at least {2} and max {1} characters long", MinimumLength = 2)]
+            public string FirstName { get; set; }
+
+            [Required, Display(Name = "Last Name")]
+            [StringLength(50, ErrorMessage = "The {0} must be at least {2} and max {1} characters long", MinimumLength = 2)]
+            public string LastName { get; set; }
+
+            [NotMapped]
+            public string FullName { get { return $"{FirstName} {LastName}"; } }
+
+            // User Profile Image
+            [NotMapped]
+            public IFormFile ImageFile { get; set; }
+            public byte[] ImageData { get; set; }
+            public string ImageType { get; set; }
+
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
@@ -70,6 +92,10 @@ namespace Chrysalis.Areas.Identity.Pages.Account.Manage
 
             Input = new InputModel
             {
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                ImageData = user.ImageData,
+                ImageType = user.ImageType,
                 PhoneNumber = phoneNumber
             };
         }
@@ -88,17 +114,23 @@ namespace Chrysalis.Areas.Identity.Pages.Account.Manage
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
-            }
+            BTUser user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
 
             if (!ModelState.IsValid)
             {
                 await LoadAsync(user);
                 return Page();
             }
+
+            user.FirstName = Input.FirstName;
+            user.LastName = Input.LastName;
+            if (Input.ImageFile != null)
+            {
+                user.ImageData = await _fileService.ConvertFileToByteArrayAsync(Input.ImageFile);
+                user.ImageType = Input.ImageFile.ContentType;
+            }
+            await _userManager.UpdateAsync(user);
 
             var phoneNumber = await _userManager.GetPhoneNumberAsync(user);
             if (Input.PhoneNumber != phoneNumber)

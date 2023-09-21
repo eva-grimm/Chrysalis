@@ -66,7 +66,6 @@ namespace Chrysalis.Services
             return await _context.Projects
                 .Where(p => p.CompanyId == companyId)
                 .Include(p => p.Members)
-                .Include(p => p.Tickets)
                 .Include(p => p.ProjectPriority)
                 .ToListAsync();
         }
@@ -75,9 +74,9 @@ namespace Chrysalis.Services
         {
             return await _context.Projects
                 .Where(p => p.CompanyId == companyId
-                    && p.Members.Any(m => m.Id == userId))
+                    && !p.Archived
+                    && p.Members.Any(m => m.Id.Equals(userId)))
                 .Include(p => p.Members)
-                .Include(p => p.Tickets)
                 .Include(p => p.ProjectPriority)
                 .ToListAsync();
         }
@@ -85,11 +84,12 @@ namespace Chrysalis.Services
         public async Task<IEnumerable<Project>> GetUnassignedActiveProjectsAsync(int? companyId)
         {
             List<Project> projects = await _context.Projects
-                                .Where(p => p.CompanyId == companyId
-                                    && !p.Archived)
-                                .Include(p => p.Members)
-                                .Include(p => p.Tickets)
-                                .ToListAsync();
+                .Where(p => p.CompanyId == companyId
+                    && !p.Archived)
+                .Include(p => p.Members)
+                .Include(p => p.Tickets)
+                .Include(p => p.ProjectPriority)
+                .ToListAsync();
 
             List<Project> unassignedProjects = new();
 
@@ -108,7 +108,10 @@ namespace Chrysalis.Services
                 .Where(p => p.CompanyId == companyId
                     && !p.Archived)
                 .Include(p => p.Members)
-                .Include(p => p.Tickets)
+                .Include(p => p.ProjectPriority)
+                .Include(t => t.Tickets
+                    .Where(t => !t.Archived 
+                        && !t.ArchivedByProject))
                 .ToListAsync();
         }
 
@@ -118,7 +121,7 @@ namespace Chrysalis.Services
                 .Where(p => p.CompanyId == companyId
                 && p.Archived)
                 .Include(p => p.Members)
-                .Include(p => p.Tickets)
+                .Include(p => p.ProjectPriority)
                 .ToListAsync();
         }
 
@@ -217,7 +220,9 @@ namespace Chrysalis.Services
 
         public async Task<IEnumerable<ProjectPriority>> GetProjectPrioritiesAsync()
         {
-            return await _context.ProjectPriorities.ToListAsync();
+            return await _context.ProjectPriorities
+                .OrderBy(p => p.Id)
+                .ToListAsync();
         }
 
         public async Task<BTUser?> GetProjectManagerAsync(int? projectId)
@@ -397,7 +402,7 @@ namespace Chrysalis.Services
             }
         }
 
-        public async Task<bool> ArchiveProjectAsync(int? projectId, int? companyId)
+        public async Task<bool> ArchiveProjectAsync(int projectId, int companyId)
         {
             Project? project = await GetProjectAsync(projectId, companyId);
             if (project == null) return false;
@@ -421,7 +426,7 @@ namespace Chrysalis.Services
             }
         }
 
-        public async Task<bool> UnarchiveProjectAsync(int? projectId, int? companyId)
+        public async Task<bool> UnarchiveProjectAsync(int projectId, int companyId)
         {
             Project? project = await GetProjectAsync(projectId, companyId);
             if (project == null) return false;

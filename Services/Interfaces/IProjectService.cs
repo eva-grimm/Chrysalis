@@ -24,7 +24,7 @@ namespace Chrysalis.Services.Interfaces
         public Task<bool> RemoveProjectManagerAsync(int? projectId);
         public Task<bool> RemoveMemberFromProjectAsync(BTUser? member, int? projectId);
         public Task<bool> RemoveProjectMembersAsync(int? projectId, int? companyId);
-        public Task<bool> ArchiveProjectAsync(int? projectId, int? companyId);
-        public Task<bool> UnarchiveProjectAsync(int? projectId, int? companyId);
+        public Task<bool> ArchiveProjectAsync(int projectId, int companyId);
+        public Task<bool> UnarchiveProjectAsync(int projectId, int companyId);
     }
 }

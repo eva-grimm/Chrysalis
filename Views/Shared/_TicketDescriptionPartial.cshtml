@@ -4,11 +4,11 @@
     <div class="card-body ps-3">
         <div class="row g-3">
             <div class="col-12 fw-bold fs-5">@Model.Title</div>
-            <div class="col-6 col-lg-3">
+            <div class="col-6 col-lg-4">
                 <strong>Created: </strong>
                 <span class="badge bg-light">@Model.Created.ToString("MM.dd.yyyy")</span>
             </div>
-            <div class="col-6 col-lg-9">
+            <div class="col-6 col-lg-8">
                 <strong>Updated: </strong>
                 @if (Model.Updated == null)
                 {

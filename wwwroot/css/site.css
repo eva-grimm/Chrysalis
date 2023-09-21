@@ -23,7 +23,12 @@
     max-height: 500px
 }
 
-.main-content-body-chat {
+.main-content-app {
+    max-height: 500px;
+}
+
+.main-chat-body {
+    overflow-x: hidden;
     overflow-y: auto;
 }
 /* #endregion Template CSS override */

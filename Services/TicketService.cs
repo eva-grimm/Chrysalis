@@ -2,6 +2,7 @@
 using Chrysalis.Enums;
 using Chrysalis.Models;
 using Chrysalis.Services.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chrysalis.Services
@@ -9,10 +10,16 @@ namespace Chrysalis.Services
     public class TicketService : ITicketService
     {
         private readonly ApplicationDbContext _context;
+        private readonly ICompanyService _companyService;
+        private readonly IRoleService _roleService;
 
-        public TicketService(ApplicationDbContext context)
+        public TicketService(ApplicationDbContext context, 
+            ICompanyService companyService, 
+            IRoleService roleService)
         {
             _context = context;
+            _companyService = companyService;
+            _roleService = roleService;
         }
 
         public bool TicketExists(int id)
@@ -61,6 +68,7 @@ namespace Chrysalis.Services
             {
                 Ticket? ticket = await _context.Tickets
                     .Include(t => t.Project)
+                        .ThenInclude(p => p.Members)
                     .Include(t => t.TicketType)
                     .Include(t => t.TicketPriority)
                     .Include(t => t.TicketStatus)
@@ -70,12 +78,15 @@ namespace Chrysalis.Services
                         .ThenInclude(a => a.User)
                     .Include(t => t.History)
                         .ThenInclude(h => h.User)
-                    .FirstOrDefaultAsync(t => t.Id == ticketId);
-                return ticket != null && ticket.Project!.CompanyId == companyId ? ticket : null;
+                    .Include(t => t.DeveloperUser)
+                    .Include(t => t.SubmitterUser)
+                    .FirstOrDefaultAsync(t => t.Id == ticketId
+                        && t.Project!.CompanyId == companyId);
+                return ticket;
             }
             catch (Exception)
             {
-                throw;
+                return null;
             }
         }
 
@@ -87,6 +98,7 @@ namespace Chrysalis.Services
             {
                 Ticket? ticket = await _context.Tickets
                     .Include(t => t.Project)
+                        .ThenInclude(p => p.Members)
                     .Include(t => t.TicketType)
                     .Include(t => t.TicketPriority)
                     .Include(t => t.TicketStatus)
@@ -94,9 +106,14 @@ namespace Chrysalis.Services
                         .ThenInclude(c => c.User)
                     .Include(t => t.Attachments)
                         .ThenInclude(a => a.User)
+                    .Include(t => t.History)
+                        .ThenInclude(h => h.User)
+                    .Include(t => t.DeveloperUser)
+                    .Include(t => t.SubmitterUser)
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(t => t.Id == ticketId);
-                return ticket != null && ticket.Project!.CompanyId == companyId ? ticket : null;
+                    .FirstOrDefaultAsync(t => t.Id == ticketId
+                        && t.Project!.CompanyId == companyId);
+                return ticket;
             }
             catch (Exception)
             {
@@ -116,12 +133,13 @@ namespace Chrysalis.Services
                         .ThenInclude(t => t.TicketStatus)
                     .Include(p => p.Tickets)
                         .ThenInclude(t => t.TicketType)
-                    .Include(p => p.Tickets)
-                        .ThenInclude(t => t.Comments)
-                            .ThenInclude(c => c.User)
-                    .Include(p => p.Tickets)
-                        .ThenInclude(t => t.Attachments)
-                            .ThenInclude(c => c.User)
+                        //TO-DO: put back?
+                    //.Include(p => p.Tickets)
+                    //    .ThenInclude(t => t.Comments)
+                    //        .ThenInclude(c => c.User)
+                    //.Include(p => p.Tickets)
+                    //    .ThenInclude(t => t.Attachments)
+                    //        .ThenInclude(c => c.User)
                     .ToListAsync();
 
                 return projects.SelectMany(p => p.Tickets);
@@ -134,11 +152,44 @@ namespace Chrysalis.Services
 
         public async Task<IEnumerable<Ticket>> GetTicketsByUserIdAsync(string? userId, int? companyId)
         {
+            BTUser? user = await _companyService.GetCompanyUserByIdAsync(userId, companyId);
+
             try
             {
-                IEnumerable<Ticket> tickets = await GetTicketsAsync(companyId);
+                // Project managers get the active tickets of their projects
+                if (await _roleService.IsUserInRoleAsync(user, nameof(BTRoles.ProjectManager)))
+                {
+                    IEnumerable<Project> projects = await _context.Projects
+                        .Where(p => p.CompanyId == companyId
+                            && !p.Archived
+                            && p.Members.Any(m => m.Id.Equals(userId)))
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketPriority)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketStatus)
+                    .Include(p => p.Tickets)
+                        .ThenInclude(t => t.TicketType)
+                        .ToListAsync();
+                    return projects.SelectMany(p => p.Tickets)
+                        .Where(t => !t.Archived
+                            && !t.ArchivedByProject);
+                }
 
-                return tickets.Where(t => t.DeveloperUserId == userId);
+                IEnumerable<Ticket> tickets = await GetTicketsAsync(companyId);
+                // Admins get all active tickets of the company
+                if (await _roleService.IsUserInRoleAsync(user, nameof(BTRoles.Admin)))
+                    return tickets.Where(t => !t.Archived
+                        && !t.ArchivedByProject);
+                // developers get tickets where they're the assigned developer
+                else if (await _roleService.IsUserInRoleAsync(user, nameof(BTRoles.Developer)))
+                    return tickets.Where(t => t.DeveloperUserId == userId
+                        && !t.Archived
+                        && !t.ArchivedByProject);
+                // submitters get tickets they submitted
+                else
+                    return tickets.Where(t => t.SubmitterUserId == userId
+                        && !t.Archived
+                        && !t.ArchivedByProject);
             }
             catch (Exception)
             {
@@ -230,31 +281,6 @@ namespace Chrysalis.Services
             {
                 return null;
             }
-        }
-
-        public async Task<IEnumerable<TicketPriority>> GetTicketPrioritiesAsync()
-        {
-            return await _context.TicketPriorities.ToListAsync();
-        }
-
-        public async Task<IEnumerable<TicketStatus>> GetTicketStatusesAsync()
-        {
-            return await _context.TicketStatuses.ToListAsync();
-        }
-
-        public async Task<int?> GetTicketStatusByIdAsync(BTTicketStatuses status)
-        {
-            string? statusName = status.ToString();
-
-            TicketStatus? ticketStatus = await _context.TicketStatuses
-                .FirstOrDefaultAsync(ts => ts.Name!.Equals(statusName));
-
-            return ticketStatus!.Id;
-        }
-
-        public async Task<IEnumerable<TicketType>> GetTicketTypesAsync()
-        {
-            return await _context.TicketTypes.ToListAsync();
         }
 
         public async Task<bool> AddTicketAttachmentAsync(TicketAttachment ticketAttachment)

@@ -18,6 +18,7 @@ namespace Chrysalis.Extensions
         {
             ClaimsIdentity identity = await base.GenerateClaimsAsync(user);
             identity.AddClaim(new Claim("CompanyId", user.CompanyId.ToString()));
+            identity.AddClaim(new Claim("UserId", user.Id));
             return identity;
         }
     }

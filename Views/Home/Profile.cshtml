@@ -1,0 +1,30 @@
+﻿@model BTUser
+@inject IProjectService _ProjectService
+@inject ITicketService _TicketService
+@inject IProjectService _ProjectService
+
+<div class="row">
+    <div class="col-12 col-md-6">
+        <partial name="_UserPartial" model="@Model" />
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="card custom-card">
+            <div class="card-body">
+                <p class="ps-3">
+                    <strong>Email:</strong> @Model.Email
+                </p>
+                <p class="ps-3 mb-0">
+                    <strong>Phone:</strong> @Model.PhoneNumber
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6">
+        <h5>Projects:</h5>
+        <partial name="_ProjectsTablePartial" model="await _ProjectService.GetProjectsByUserIdAsync(Model.Id, Model.CompanyId)" />
+    </div>
+    <div class="col-12 col-md-6">
+        <h5>Tickets:</h5>
+        <partial name="_TicketsTablePartial" model="await _TicketService.GetTicketsByUserIdAsync(Model.Id, Model.CompanyId)" />
+    </div>
+</div>

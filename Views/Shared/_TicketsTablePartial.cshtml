@@ -66,16 +66,16 @@
                                        asp-route-ticketId="@ticket.Id" class="badge bg-secondary ms-1">
                                         <i class="bi bi-pencil-fill"></i>
                                     </a>
-                                    @if (!ticket.Archived || !ticket.ArchivedByProject)
+                                    @if (ticket.Archived || ticket.ArchivedByProject)
                                     {
-                                        <a asp-action="ConfirmArchive" asp-controller="Tickets"
+                                        <a asp-action="ConfirmUnarchive" asp-controller="Tickets"
                                            asp-route-ticketId="@ticket.Id" class="badge bg-danger ms-1">
                                             <i class="bi bi-archive-fill"></i>
                                         </a>
                                     }
                                     else
                                     {
-                                        <a asp-action="ConfirmUnarchive" asp-controller="Tickets"
+                                        <a asp-action="ConfirmArchive" asp-controller="Tickets"
                                            asp-route-ticketId="@ticket.Id" class="badge bg-danger ms-1">
                                             <i class="bi bi-archive-fill"></i>
                                         </a>
@@ -91,5 +91,4 @@
 </div>
 
 @section Scripts {
-    
 }

@@ -3,12 +3,32 @@
 @inject IRoleService _RoleService
 
 <div class="card custom-card card-aside hover-card">
-    @*TO-DO: Add link to user profile*@
-    <a class="card-aside-column cover-image rounded-start-11" href="#"
+    <a class="card-aside-column cover-image rounded-start-11" asp-controller="Home"
+       asp-action="Profile" asp-route-userId="@Model.Id"
        data-image-src="@_FileService.ConvertByteArrayToFile(Model.ImageData,Model.ImageType,DefaultImage.BTUserImage)"
        style="background: url('@_FileService.ConvertByteArrayToFile(Model.ImageData,Model.ImageType,DefaultImage.BTUserImage)') center"></a>
     <div class="card-body ps-3">
         <h5 class="main-content-label tx-dark tx-medium">@Model?.FullName</h5>
-        <p>@((await _RoleService.GetUserRolesAsync(Model)).First())</p>
+        <p>
+            @((await _RoleService.GetUserRolesAsync(Model)).First())
+            <span>
+                @if (await _RoleService.IsUserInRoleAsync(Model, nameof(BTRoles.Admin)))
+                {
+                    <i class="bi bi-key ps-3"></i>
+                }
+                else if (await _RoleService.IsUserInRoleAsync(Model, nameof(BTRoles.ProjectManager)))
+                {
+                    <i class="bi bi-cup-hot ps-3"></i>
+                }
+                else if (await _RoleService.IsUserInRoleAsync(Model, nameof(BTRoles.Developer)))
+                {
+                    <i class="bi bi-braces ps-3"></i>
+                }
+                else if (await _RoleService.IsUserInRoleAsync(Model, nameof(BTRoles.Submitter)))
+                {
+                    <i class="bi bi-person ps-3"></i>
+                }
+            </span>
+        </p>
     </div>
 </div>

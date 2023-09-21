@@ -4,11 +4,10 @@
 @inject IRoleService _RoleService
 @{
     ViewData["Title"] = "Edit";
-    BTUser? currentUser = await _UserManager.GetUserAsync(User);
-    BTRoles currentUserRole = await _RoleService.GetActiveUserRoleAsync(currentUser!.Id);
 }
 <form asp-action="Edit">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" name="ticketId" value="@Model.Id" />
     <input type="hidden" asp-for="ProjectId" value="@ViewBag.ProjectId" />
     <div class="row g-3">
         <div class="col-12">
@@ -27,7 +26,7 @@
         </div>
         <div class="col-12 col-md-6">
             <div class="d-flex">
-                <button type="submit" class="btn btn-primary">Create</button>
+                <button type="submit" class="btn btn-primary">Edit</button>
                 <a asp-controller="Tickets" asp-action="Index"
                    class="btn btn-danger ms-3">Cancel</a>
             </div>

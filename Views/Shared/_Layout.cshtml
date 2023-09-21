@@ -4,10 +4,8 @@
 @inject ICompanyService _CompanyService
 @inject INotificationService _NotificationService
 @inject IFileService _FileService
-
 @{
     BTUser? currentUser = await _UserManager.GetUserAsync(User);
-    BTRoles currentUserRole = await _RoleService.GetActiveUserRoleAsync(currentUser!.Id);
     List<Notification> notifications = await _NotificationService.GetUserNotificationsAsync(currentUser!.Id);
     List<Notification> unreadNotifications = await _NotificationService.GetUnreadUserNotificationsAsync(currentUser!.Id);
 }
@@ -58,8 +56,6 @@
 
 <body class="ltr main-body leftmenu">
     <partial name="_LogoutPartial" />
-    <!-- TO-DO: Loader? Wasn't working on first insert->
-
     <!-- Page -->
     <div class="page">
         <!-- Main Header -->
@@ -85,33 +81,6 @@
                                  alt="logo">
                         </a>
                     </div>
-                    <!-- Start Search Widget -->
-                    <div class="input-group">
-                        <div class="input-group-btn search-panel">
-                            <select class="form-control select2">
-                                <option label="All categories">
-                                </option>
-                                <option value="IT Projects">
-                                    IT Projects
-                                </option>
-                                <option value="Business Case">
-                                    Business Case
-                                </option>
-                                <option value="Microsoft Project">
-                                    Microsoft Project
-                                </option>
-                                <option value="Risk Management">
-                                    Risk Management
-                                </option>
-                                <option value="Team Building">
-                                    Team Building
-                                </option>
-                            </select>
-                        </div>
-                        <input type="search" class="form-control rounded-0" placeholder="Search for anything...">
-                        <button class="btn search-btn"><i class="fe fe-search"></i></button>
-                        <!-- End Search Widget -->
-                    </div>
                 </div>
                 <div class="main-header-right">
                     <!-- Navresponsive toggle -->
@@ -124,51 +93,6 @@
                     <div class="navbar navbar-expand-lg  nav nav-item  navbar-nav-right responsive-navbar navbar-dark  ">
                         <div class="collapse navbar-collapse" id="navbarSupportedContent-4">
                             <div class="d-flex order-lg-2 ms-auto">
-                                <!-- Start Search -->
-                                <div class="dropdown header-search">
-                                    <a class="nav-link icon header-search">
-                                        <i class="fe fe-search header-icons"></i>
-                                    </a>
-                                    <div class="dropdown-menu">
-                                        <div class="main-form-search p-2">
-                                            <div class="input-group">
-                                                <div class="input-group-btn search-panel">
-                                                    <select class="form-control select2">
-                                                        <option label="All categories">
-                                                        </option>
-                                                        <option value="IT Projects">
-                                                            IT Projects
-                                                        </option>
-                                                        <option value="Business Case">
-                                                            Business Case
-                                                        </option>
-                                                        <option value="Microsoft Project">
-                                                            Microsoft Project
-                                                        </option>
-                                                        <option value="Risk Management">
-                                                            Risk Management
-                                                        </option>
-                                                        <option value="Team Building">
-                                                            Team Building
-                                                        </option>
-                                                    </select>
-                                                </div>
-                                                <input type="search" class="form-control"
-                                                       placeholder="Search for anything...">
-                                                <button class="btn search-btn">
-                                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                                         width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                                         stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                                         stroke-linejoin="round" class="feather feather-search">
-                                                        <circle cx="11" cy="11" r="8"></circle>
-                                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- End Search -->
                                 <!-- Start Theme-Layout -->
                                 <div class="dropdown d-flex main-header-theme">
                                     <a class="nav-link icon layout-setting">
@@ -189,7 +113,7 @@
                                     </a>
                                 </div>
                                 <!-- End Full screen -->
-                                <!-- Start Notification -->
+                                @* <!-- Start Notification -->
                                 <div class="dropdown main-header-notification">
                                     <a class="nav-link icon" href="javascript:void(0)">
                                         <i class="fe fe-bell header-icons"></i>
@@ -268,7 +192,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- End Notification -->
+                                <!-- End Notification --> *@
                                 <!-- Start Profile -->
                                 <div class="dropdown main-profile-menu">
                                     <a class="d-flex" href="javascript:void(0)">
@@ -283,14 +207,15 @@
                                     <div class="dropdown-menu">
                                         <div class="header-navheading">
                                             <h6 class="main-notification-title">@currentUser?.FullName</h6>
-                                            <p class="main-notification-text">@currentUserRole.ToString()</p>
+                                            <p class="main-notification-text">@((await _RoleService.GetUserRolesAsync(currentUser)).First())</p>
                                         </div>
-                                        <a class="dropdown-item border-top" href="#">
+                                        <a class="dropdown-item border-top" asp-area="Identity"
+                                            asp-page="/Account/Manage/Index">
                                             <i class="fe fe-user"></i> My Profile
                                         </a>
-                                        <a class="dropdown-item" href="#">
+                                        @* <a class="dropdown-item" href="#">
                                             <i class="fe fe-settings"></i> Support
-                                        </a>
+                                        </a> *@
                                         <a class="dropdown-item"
                                            href="javascript:document.getElementById('logoutForm').submit();">
                                             <i class="fe fe-power"></i> Log Out
@@ -340,16 +265,16 @@
                                 </a>
                             </li>
                             <li class="nav-header"><span class="nav-label">Projects</span></li>
-                            @if (currentUserRole == BTRoles.Admin)
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link with-sub" href="javascript:void(0)">
-                                        <span class="shape1"></span>
-                                        <span class="shape2"></span>
-                                        <i class="bi bi-easel-fill sidemenu-icon menu-icon "></i>
-                                        <span class="sidemenu-label">Projects</span>
-                                        <i class="angle fe fe-chevron-right"></i>
-                                    </a>
+                            <li class="nav-item">
+                                <a class="nav-link with-sub" href="javascript:void(0)">
+                                    <span class="shape1"></span>
+                                    <span class="shape2"></span>
+                                    <i class="bi bi-easel-fill sidemenu-icon menu-icon "></i>
+                                    <span class="sidemenu-label">Projects</span>
+                                    <i class="angle fe fe-chevron-right"></i>
+                                </a>
+                                @if (User.IsInRole(nameof(BTRoles.Admin)))
+                                {
                                     <ul class="nav-sub">
                                         <li class="side-menu-label1"><a href="javascript:void(0)">Projects</a></li>
                                         <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Projects" asp-action="AllProjects">All Projects</a></li>
@@ -357,30 +282,27 @@
                                         <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Projects" asp-action="UnassignedProjects">Unassigned Projects</a></li>
                                         <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Projects" asp-action="ArchivedProjects">Archived Projects</a></li>
                                     </ul>
-                                </li>
-                            }
-                            else
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Projects" asp-action="MyProjects">
-                                        <span class="shape1"></span>
-                                        <span class="shape2"></span>
-                                        <i class="bi bi-easel-fill sidemenu-icon menu-icon "></i>
-                                        <span class="sidemenu-label">Projects</span>
-                                    </a>
-                                </li>
-                            }
+                                }
+                                else
+                                {
+                                    <ul class="nav-sub">
+                                        <li class="side-menu-label1"><a href="javascript:void(0)">Projects</a></li>
+                                        <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Projects" asp-action="AllProjects">All Projects</a></li>
+                                        <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Projects" asp-action="MyProjects">My Projects</a></li>
+                                    </ul>
+                                }
+                            </li>
                             <li class="nav-header"><span class="nav-label">Tickets</span></li>
-                            @if (currentUserRole == BTRoles.Admin)
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link with-sub" href="javascript:void(0)">
-                                        <span class="shape1"></span>
-                                        <span class="shape2"></span>
-                                        <i class="bi bi-list-task sidemenu-icon menu-icon"></i>
-                                        <span class="sidemenu-label">Tickets</span>
-                                        <i class="angle fe fe-chevron-right"></i>
-                                    </a>
+                            <li class="nav-item">
+                                <a class="nav-link with-sub" href="javascript:void(0)">
+                                    <span class="shape1"></span>
+                                    <span class="shape2"></span>
+                                    <i class="bi bi-list-task sidemenu-icon menu-icon"></i>
+                                    <span class="sidemenu-label">Tickets</span>
+                                    <i class="angle fe fe-chevron-right"></i>
+                                </a>
+                                @if (User.IsInRole(nameof(BTRoles.Admin)))
+                                {
                                     <ul class="nav-sub">
                                         <li class="side-menu-label1"><a href="javascript:void(0)">Tickets</a></li>
                                         <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="AllTickets">All Tickets</a></li>
@@ -388,19 +310,16 @@
                                         <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="UnassignedTickets">Unassigned Tickets</a></li>
                                         <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="ArchivedTickets">Archived Tickets</a></li>
                                     </ul>
-                                </li>
-                            }
-                            else
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Tickets" asp-action="MyTickets">
-                                        <span class="shape1"></span>
-                                        <span class="shape2"></span>
-                                        <i class="bi bi-list-task sidemenu-icon menu-icon"></i>
-                                        <span class="sidemenu-label">Tickets</span>
-                                    </a>
-                                </li>
-                            }
+                                }
+                                else
+                                {
+                                    <ul class="nav-sub">
+                                        <li class="side-menu-label1"><a href="javascript:void(0)">Tickets</a></li>
+                                        <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="AllTickets">All Tickets</a></li>
+                                        <li class="nav-sub-item"><a class="nav-sub-link" asp-controller="Tickets" asp-action="MyTickets">My Tickets</a></li>
+                                    </ul>
+                                }
+                            </li>
                         </ul>
                         <div class="slide-right" id="slide-right"><i class="fe fe-chevron-right"></i></div>
                     </div>
@@ -504,6 +423,11 @@
     <script src="~/assets/plugins/datatable/dataTables.responsive.min.js"></script>
     <script src="~/assets/plugins/datatable/responsive.bootstrap5.min.js"></script>
     <script src="~/assets/js/select2.js"></script>
+
+    <!-- Internal Flot Chart js-->
+    <script src="~/assets/plugins/jquery.flot/jquery.flot.js"></script>
+    <script src="~/assets/plugins/jquery.flot/jquery.flot.pie.js"></script>
+    <script src="~/assets/plugins/jquery.flot/jquery.flot.resize.js"></script>
 
     <!-- Spruha Custom js -->
     <script src="~/assets/js/custom.js"></script>

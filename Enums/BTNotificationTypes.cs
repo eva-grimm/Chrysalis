@@ -1,6 +1,6 @@
 ﻿namespace Chrysalis.Enums
 {
-    public enum BTNotificationType
+    public enum BTNotificationTypes
     {
         Project,
         Ticket

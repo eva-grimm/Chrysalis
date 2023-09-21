@@ -4,8 +4,6 @@
 @inject IRoleService _RoleService
 @{
     ViewData["Title"] = "Create";
-    BTUser? currentUser = await _UserManager.GetUserAsync(User);
-    BTRoles currentUserRole = await _RoleService.GetActiveUserRoleAsync(currentUser!.Id);
 }
 <form asp-action="Create">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -37,12 +35,14 @@
                 <select asp-for="TicketPriorityId" class="form-control" asp-items="ViewBag.TicketPriorities"></select>
             </div>
         </div>
-        @if (currentUserRole == BTRoles.Admin)
+        @if (User.IsInRole(nameof(BTRoles.Admin)))
         {
             <div class="col-12 col-md-6">
                 <div class="form-group">
                     <label asp-for="DeveloperUserId" class="control-label">Developer User</label>
-                    <select asp-for="DeveloperUserId" class="form-control" asp-items="ViewBag.DeveloperUsers"></select>
+                    <select name="selectedDevId" class="form-control" asp-items="ViewBag.DeveloperUsers">
+                        <option>Unassigned</option>
+                    </select>
                 </div>
             </div>
         }
