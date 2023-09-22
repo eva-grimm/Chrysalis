@@ -42,12 +42,15 @@
                 <input asp-for="EndDate" class="form-control" />
                 <span asp-validation-for="EndDate" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label for="projectManagerId" class="control-label">Project Manager</label>
-                <select name="projectManagerId" class="form-control" asp-items="ViewBag.ProjectManagers">
-                    <option>Unassigned</option>
-                </select>
-            </div>
+            @if (User.IsInRole(nameof(BTRoles.Admin)))
+            {
+                <div class="form-group">
+                    <label for="projectManagerId" class="control-label">Project Manager</label>
+                    <select name="projectManagerId" class="form-control" asp-items="ViewBag.ProjectManagers">
+                        <option>Unassigned</option>
+                    </select>
+                </div>
+            }
             <div class="form-group">
                 <p>Project Priority</p>
                 <select asp-for="ProjectPriorityId" class="form-control" asp-items="ViewBag.ProjectPriorities"></select>

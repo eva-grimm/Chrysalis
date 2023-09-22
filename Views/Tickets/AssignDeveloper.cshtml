@@ -15,7 +15,7 @@
             <p class="fw-bold">Ticket: @Model.Title</p>
             <input type="hidden" name="ticketId" value="@Model.Id" />
             <div class="input-group">
-                <select asp-items="ViewBag.Developers" name="selected"
+                <select asp-items="ViewBag.Developers" name="selectedDevId"
                         class="form-control">
                     <option>Unassigned</option>
                 </select>

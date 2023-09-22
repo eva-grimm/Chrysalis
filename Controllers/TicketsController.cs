@@ -204,11 +204,12 @@ namespace Chrysalis.Controllers
             ?? throw new BadHttpRequestException("Cannot find specified ticket");
 
             // If not project manager for the ticket's project
-            // OR not an admin AND neither Developer or Submitter for ticket
+            // AND not an admin
+            // AND neither Developer or Submitter for ticket
             if (!_userId.Equals((await _projectService.GetProjectManagerAsync(ticket.ProjectId))?.Id)
-                || (!User.IsInRole(nameof(BTRoles.Admin))
-                    && !ticket.DeveloperUserId?.Equals(_userId) == false
-                    && !ticket.SubmitterUserId?.Equals(_userId) == false))
+                && !User.IsInRole(nameof(BTRoles.Admin))
+                && !ticket.DeveloperUserId?.Equals(_userId) == true
+                && !ticket.SubmitterUserId?.Equals(_userId) == true)
             {
                 return Unauthorized();
             }
@@ -226,11 +227,12 @@ namespace Chrysalis.Controllers
                 ?? throw new BadHttpRequestException("Problem finding specified ticket", 400);
 
             // If not project manager for the ticket's project
-            // OR not an admin AND neither Developer or Submitter for ticket
+            // AND not an admin
+            // AND neither Developer or Submitter for ticket
             if (!_userId.Equals((await _projectService.GetProjectManagerAsync(ticket.ProjectId))?.Id)
-                || (!User.IsInRole(nameof(BTRoles.Admin))
-                    && !ticket.DeveloperUserId?.Equals(_userId) == false
-                    && !ticket.SubmitterUserId?.Equals(_userId) == false))
+                && !User.IsInRole(nameof(BTRoles.Admin))
+                && !ticket.DeveloperUserId?.Equals(_userId) == true
+                && !ticket.SubmitterUserId?.Equals(_userId) == true)
             {
                 return Unauthorized();
             }
@@ -277,11 +279,12 @@ namespace Chrysalis.Controllers
                 ?? throw new BadHttpRequestException("Problem finding specified ticket", 400);
 
             // If not project manager for the ticket's project
-            // OR not an admin AND neither Developer or Submitter for ticket
+            // AND not an admin
+            // AND neither Developer or Submitter for ticket
             if (!_userId.Equals((await _projectService.GetProjectManagerAsync(ticket.ProjectId))?.Id)
-                || (!User.IsInRole(nameof(BTRoles.Admin))
-                    && !ticket.DeveloperUserId?.Equals(_userId) == false
-                    && !ticket.SubmitterUserId?.Equals(_userId) == false))
+                && !User.IsInRole(nameof(BTRoles.Admin))
+                && !ticket.DeveloperUserId?.Equals(_userId) == true
+                && !ticket.SubmitterUserId?.Equals(_userId) == true)
             {
                 return Unauthorized();
             }
@@ -298,11 +301,12 @@ namespace Chrysalis.Controllers
                 ?? throw new BadHttpRequestException("Problem finding specified ticket", 400);
 
             // If not project manager for the ticket's project
-            // OR not an admin AND neither Developer or Submitter for ticket
+            // AND not an admin
+            // AND neither Developer or Submitter for ticket
             if (!_userId.Equals((await _projectService.GetProjectManagerAsync(ticket.ProjectId))?.Id)
-                || (!User.IsInRole(nameof(BTRoles.Admin))
-                    && !ticket.DeveloperUserId?.Equals(_userId) == false
-                    && !ticket.SubmitterUserId?.Equals(_userId) == false))
+                && !User.IsInRole(nameof(BTRoles.Admin))
+                && !ticket.DeveloperUserId?.Equals(_userId) == true
+                && !ticket.SubmitterUserId?.Equals(_userId) == true)
             {
                 return Unauthorized();
             }
@@ -345,11 +349,12 @@ namespace Chrysalis.Controllers
                 ?? throw new BadHttpRequestException("Problem finding specified ticket", 400);
 
             // If not project manager for the ticket's project
-            // OR not an admin AND neither Developer or Submitter for ticket
+            // AND not an admin
+            // AND neither Developer or Submitter for ticket
             if (!_userId.Equals((await _projectService.GetProjectManagerAsync(ticket.ProjectId))?.Id)
-                || (!User.IsInRole(nameof(BTRoles.Admin))
-                    && !ticket.DeveloperUserId?.Equals(_userId) == false
-                    && !ticket.SubmitterUserId?.Equals(_userId) == false))
+                && !User.IsInRole(nameof(BTRoles.Admin))
+                && !ticket.DeveloperUserId?.Equals(_userId) == true
+                && !ticket.SubmitterUserId?.Equals(_userId) == true)
             {
                 return Unauthorized();
             }
@@ -366,11 +371,12 @@ namespace Chrysalis.Controllers
                 ?? throw new BadHttpRequestException("Problem finding specified ticket", 400);
 
             // If not project manager for the ticket's project
-            // OR not an admin AND neither Developer or Submitter for ticket
+            // AND not an admin
+            // AND neither Developer or Submitter for ticket
             if (!_userId.Equals((await _projectService.GetProjectManagerAsync(ticket.ProjectId))?.Id)
-                || (!User.IsInRole(nameof(BTRoles.Admin))
-                    && !ticket.DeveloperUserId?.Equals(_userId) == false
-                    && !ticket.SubmitterUserId?.Equals(_userId) == false))
+                && !User.IsInRole(nameof(BTRoles.Admin))
+                && !ticket.DeveloperUserId?.Equals(_userId) == true
+                && !ticket.SubmitterUserId?.Equals(_userId) == true)
             {
                 return Unauthorized();
             }
@@ -405,6 +411,19 @@ namespace Chrysalis.Controllers
             {
                 throw new BadHttpRequestException("Problem updating ticket", 500);
             }
+        }
+
+        [Authorize(Policy = nameof(BTPolicies.AdPm))]
+        public async Task<IActionResult> AssignDeveloper(int? ticketId)
+        {
+            if (ticketId == null) return NotFound();
+
+            Ticket? ticket = await _ticketService.GetTicketByIdAsNoTrackingAsync(ticketId, _companyId)
+                ?? throw new BadHttpRequestException("Cannot find specified ticket");
+
+            ViewBag.Developers = new SelectList(await _projectService.GetProjectDevelopersAsync(ticket.ProjectId), "Id", "FullName", ticket.DeveloperUserId);
+
+            return View(ticket);
         }
 
         [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = nameof(BTPolicies.AdPm))]
@@ -460,11 +479,12 @@ namespace Chrysalis.Controllers
                 ?? throw new BadHttpRequestException("Problem finding specified ticket", 400);
 
             // If not project manager for the ticket's project
-            // OR not an admin AND neither Developer or Submitter for ticket
+            // AND not an admin
+            // AND neither Developer or Submitter for ticket
             if (!_userId.Equals((await _projectService.GetProjectManagerAsync(ticket.ProjectId))?.Id)
-                || (!User.IsInRole(nameof(BTRoles.Admin))
-                    && !ticket.DeveloperUserId?.Equals(_userId) == false
-                    && !ticket.SubmitterUserId?.Equals(_userId) == false))
+                && !User.IsInRole(nameof(BTRoles.Admin))
+                && !ticket.DeveloperUserId?.Equals(_userId) == true
+                && !ticket.SubmitterUserId?.Equals(_userId) == true)
             {
                 return Unauthorized();
             }
@@ -503,11 +523,12 @@ namespace Chrysalis.Controllers
                 ?? throw new BadHttpRequestException("Problem finding specified ticket", 400);
 
             // If not project manager for the ticket's project
-            // OR not an admin AND neither Developer or Submitter for ticket
+            // AND not an admin
+            // AND neither Developer or Submitter for ticket
             if (!_userId.Equals((await _projectService.GetProjectManagerAsync(ticket.ProjectId))?.Id)
-                || (!User.IsInRole(nameof(BTRoles.Admin))
-                    && !ticket.DeveloperUserId?.Equals(_userId) == false
-                    && !ticket.SubmitterUserId?.Equals(_userId) == false))
+                && !User.IsInRole(nameof(BTRoles.Admin))
+                && !ticket.DeveloperUserId?.Equals(_userId) == true
+                && !ticket.SubmitterUserId?.Equals(_userId) == true)
             {
                 return Unauthorized();
             }
@@ -545,12 +566,15 @@ namespace Chrysalis.Controllers
             Ticket? ticket = await _ticketService.GetTicketByIdAsync(ticketId, _companyId)
                 ?? throw new BadHttpRequestException("Problem finding specified ticket", 400);
 
+            bool check = !ticket.DeveloperUserId?.Equals(_userId) == true;
+
             // If not project manager for the ticket's project
-            // OR not an admin AND neither Developer or Submitter for ticket
+            // AND not an admin
+            // AND neither Developer or Submitter for ticket
             if (!_userId.Equals((await _projectService.GetProjectManagerAsync(ticket.ProjectId))?.Id)
-                || (!User.IsInRole(nameof(BTRoles.Admin))
-                    && !ticket.DeveloperUserId?.Equals(_userId) == false
-                    && !ticket.SubmitterUserId?.Equals(_userId) == false))
+                && !User.IsInRole(nameof(BTRoles.Admin))
+                && !ticket.DeveloperUserId?.Equals(_userId) == true
+                && !ticket.SubmitterUserId?.Equals(_userId) == true)
             {
                 return Unauthorized();
             }
@@ -592,11 +616,12 @@ namespace Chrysalis.Controllers
                 ?? throw new BadHttpRequestException("Cannot find specified ticket", 400);
 
             // If not project manager for the ticket's project
-            // OR not an admin AND neither Developer or Submitter for ticket
+            // AND not an admin
+            // AND neither Developer or Submitter for ticket
             if (!_userId.Equals((await _projectService.GetProjectManagerAsync(ticket.ProjectId))?.Id)
-                || (!User.IsInRole(nameof(BTRoles.Admin))
-                    && !ticket.DeveloperUserId?.Equals(_userId) == false
-                    && !ticket.SubmitterUserId?.Equals(_userId) == false))
+                && !User.IsInRole(nameof(BTRoles.Admin))
+                && !ticket.DeveloperUserId?.Equals(_userId) == true
+                && !ticket.SubmitterUserId?.Equals(_userId) == true)
             {
                 return Unauthorized();
             }
@@ -647,11 +672,12 @@ namespace Chrysalis.Controllers
                 ?? throw new BadHttpRequestException("Cannot find specified ticket", 400);
 
             // If not project manager for the ticket's project
-            // OR not an admin AND neither Developer or Submitter for ticket
+            // AND not an admin
+            // AND neither Developer or Submitter for ticket
             if (!_userId.Equals((await _projectService.GetProjectManagerAsync(ticket.ProjectId))?.Id)
-                || (!User.IsInRole(nameof(BTRoles.Admin))
-                    && !ticket.DeveloperUserId?.Equals(_userId) == false
-                    && !ticket.SubmitterUserId?.Equals(_userId) == false))
+                && !User.IsInRole(nameof(BTRoles.Admin))
+                && !ticket.DeveloperUserId?.Equals(_userId) == true
+                && !ticket.SubmitterUserId?.Equals(_userId) == true)
             {
                 return Unauthorized();
             }
@@ -691,7 +717,8 @@ namespace Chrysalis.Controllers
                 ?? throw new BadHttpRequestException("Cannot find specified ticket", 400);
 
             // If not project manager for the ticket's project
-            // OR not an admin AND attachment is not current user's
+            // AND not an admin
+            // AND not attachment owner
             if (!_userId.Equals((await _projectService.GetProjectManagerAsync(ticket.ProjectId))?.Id)
                 && !User.IsInRole(nameof(BTRoles.Admin))
                 && attachment.UserId?.Equals(_userId) == false)
@@ -715,7 +742,7 @@ namespace Chrysalis.Controllers
 
             // If not project manager for the ticket's project
             // AND not an admin
-            // AND attachment is not current user's
+            // AND not attachment owner
             if (!_userId.Equals((await _projectService.GetProjectManagerAsync(ticket.ProjectId))?.Id)
                 && !User.IsInRole(nameof(BTRoles.Admin))
                 && attachment.UserId?.Equals(_userId) == false)

@@ -118,9 +118,6 @@ namespace Chrysalis.Controllers
 
             if (!ModelState.IsValid)
             {
-                IEnumerable<BTUser> projectManagers = await _roleService.GetUsersInRoleAsync(nameof(BTRoles.ProjectManager), _companyId);
-                ViewBag.ProjectManagers = new SelectList(projectManagers, "Id", "FullName");
-
                 ViewData["ProjectPriorities"] = new SelectList(await _projectService.GetProjectPrioritiesAsync(), "Id", "Name");
                 return View(project);
             }
@@ -147,11 +144,9 @@ namespace Chrysalis.Controllers
                     if (!success) throw new BadHttpRequestException("There was an issue creating the Project", 500);
 
                     // no PM selected
-                    // TO-DO: something more elegant!
-                    if (projectManagerId!.Equals("Unassigned")) return RedirectToAction(nameof(Index));
-
-                    success = await _projectService.AddProjectManagerAsync(projectManagerId, project.Id);
-                    if (!success) throw new BadHttpRequestException("There was an issue assigning the chosen PM.", 500);
+                    if (projectManagerId?.Equals("Unassigned") == false 
+                        && projectManagerId != null) 
+                        success = await _projectService.AddProjectManagerAsync(projectManagerId, project.Id);
 
                     return RedirectToAction(nameof(Index));
                 }
@@ -163,7 +158,7 @@ namespace Chrysalis.Controllers
         }
 
         // GET: Projects/Edit/5
-        [Authorize(Roles = nameof(BTRoles.Admin))]
+        [Authorize(Policy = nameof(BTPolicies.AdPm))]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) throw new BadHttpRequestException("Bad input", 400);
@@ -171,24 +166,40 @@ namespace Chrysalis.Controllers
             Project? project = await _projectService.GetProjectAsync(id, _companyId)
                 ?? throw new BadHttpRequestException("No matching project found", 500);
 
+            // If not project manager for the project
+            // OR not an admin
+            if (!_userId.Equals((await _projectService.GetProjectManagerAsync(project.Id))?.Id)
+                && (!User.IsInRole(nameof(BTRoles.Admin))))
+            {
+                return Unauthorized();
+            }
+
             ViewData["ProjectPriorities"] = new SelectList(
                 await _projectService.GetProjectPrioritiesAsync(),
                     "Id", "Name", project.ProjectPriority);
 
             IEnumerable<BTUser> projectManagers = await _roleService.GetUsersInRoleAsync(nameof(BTRoles.ProjectManager), _companyId);
             BTUser? currentPM = await _projectService.GetProjectManagerAsync(id);
-            ViewBag.ProjectManagers = new SelectList(projectManagers, "Id", "FullName", currentPM);
+            ViewBag.ProjectManagers = new SelectList(projectManagers, "Id", "FullName", currentPM.Id);
 
             return View(project);
         }
 
         // POST: Projects/Edit/5
-        [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = nameof(BTRoles.Admin))]
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = nameof(BTPolicies.AdPm))]
         public async Task<IActionResult> Edit(int id, string? projectManagerId)
         {
             Project? project = await _projectService
                 .GetProjectAsync(id, _companyId)
                 ?? throw new BadHttpRequestException("No matching project found", 400);
+
+            // If not project manager for the project
+            // OR not an admin
+            if (!_userId.Equals((await _projectService.GetProjectManagerAsync(project.Id))?.Id)
+                && (!User.IsInRole(nameof(BTRoles.Admin))))
+            {
+                return Unauthorized();
+            }
 
             bool validUpdate = await TryUpdateModelAsync(
                 project,
@@ -198,7 +209,8 @@ namespace Chrysalis.Controllers
                 p => p.StartDate,
                 p => p.EndDate,
                 p => p.ProjectPriorityId,
-                p => p.ImageFile);
+                p => p.ImageFile
+                );
 
             if (!validUpdate)
             {
@@ -233,11 +245,11 @@ namespace Chrysalis.Controllers
                     if (!success) throw new BadHttpRequestException("There was an issue editing the Project", 500);
 
                     // no PM selected
-                    // TO-DO: something more elegant!
-                    if (projectManagerId!.Equals("Unassigned")) return RedirectToAction(nameof(Index));
-
-                    success = await _projectService.AddProjectManagerAsync(projectManagerId, project.Id);
-                    if (!success) throw new BadHttpRequestException("There was an issue assigning the chosen PM.", 500);
+                    if (projectManagerId?.Equals("Unassigned") == false
+                        && projectManagerId != null)
+                        await _projectService.AddProjectManagerAsync(projectManagerId, project.Id);
+                    else if (projectManagerId?.Equals("Unassigned") == true)
+                        await _projectService.RemoveProjectManagerAsync(project.Id);
 
                     return RedirectToAction(nameof(Index));
                 }
@@ -313,18 +325,13 @@ namespace Chrysalis.Controllers
                 .GetProjectAsync(projectId, _companyId)
                 ?? throw new BadHttpRequestException("No matching project found", 400);
 
-            //ViewBag.Developers = new MultiSelectList(
-            //    await _roleService.GetUsersInRoleAsync(nameof(BTRoles.Developer), _companyId),
-            //    "Id", "FullName", 
-            //    (await _roleService.GetUsersInRoleAsync(nameof(BTRoles.Developer), _companyId))
-            //        .Where(u => u.Projects.Any(p => p.Id == projectId))
-            //    );
-            //ViewBag.Submitters = new MultiSelectList(
-            //    await _roleService.GetUsersInRoleAsync(nameof(BTRoles.Submitter), _companyId),
-            //    "Id", "FullName",
-            //    (await _roleService.GetUsersInRoleAsync(nameof(BTRoles.Submitter), _companyId))
-            //        .Where(u => u.Projects.Any(p => p.Id == projectId))
-            //    );
+            // If not project manager for the project
+            // OR not an admin
+            if (!_userId.Equals((await _projectService.GetProjectManagerAsync(project.Id))?.Id)
+                && (!User.IsInRole(nameof(BTRoles.Admin))))
+            {
+                return Unauthorized();
+            }
 
             return View(project);
         }
@@ -338,6 +345,14 @@ namespace Chrysalis.Controllers
             Project? project = await _projectService
                 .GetProjectAsync(projectId, _companyId)
                 ?? throw new BadHttpRequestException("No matching project found", 400);
+
+            // If not project manager for the project
+            // OR not an admin
+            if (!_userId.Equals((await _projectService.GetProjectManagerAsync(project.Id))?.Id)
+                && (!User.IsInRole(nameof(BTRoles.Admin))))
+            {
+                return Unauthorized();
+            }
 
             try
             {
@@ -384,8 +399,17 @@ namespace Chrysalis.Controllers
         [Authorize(Policy = nameof(BTPolicies.AdPm))]
         public async Task<IActionResult> ConfirmArchive(int? projectId)
         {
-            Project? model = await _projectService.GetProjectAsync(projectId, _companyId);
-            if (model == null) throw new BadHttpRequestException("Could not find the requested project.", 400);
+            Project? model = await _projectService.GetProjectAsync(projectId, _companyId) 
+                ?? throw new BadHttpRequestException("Could not find the requested project.", 400);
+
+            // If not project manager for the project
+            // OR not an admin
+            if (!_userId.Equals((await _projectService.GetProjectManagerAsync(model.Id))?.Id)
+                && (!User.IsInRole(nameof(BTRoles.Admin))))
+            {
+                return Unauthorized();
+            }
+
 
             return View(model);
         }
@@ -394,6 +418,17 @@ namespace Chrysalis.Controllers
         public async Task<IActionResult> ConfirmArchive(int projectId)
         {
             string? swalMessage = string.Empty;
+
+            Project? project = await _projectService.GetProjectAsync(projectId, _companyId) 
+                ?? throw new BadHttpRequestException("Could not find the requested project.", 400);
+
+            // If not project manager for the project
+            // OR not an admin
+            if (!_userId.Equals((await _projectService.GetProjectManagerAsync(project.Id))?.Id)
+                && (!User.IsInRole(nameof(BTRoles.Admin))))
+            {
+                return Unauthorized();
+            }
 
             bool success = await _projectService.ArchiveProjectAsync(projectId, _companyId);
 
@@ -405,8 +440,16 @@ namespace Chrysalis.Controllers
         [Authorize(Policy = nameof(BTPolicies.AdPm))]
         public async Task<IActionResult> ConfirmUnarchive(int? projectId)
         {
-            Project? model = await _projectService.GetProjectAsync(projectId, _companyId);
-            if (model == null) throw new BadHttpRequestException("Could not find the requested project.", 400);
+            Project? model = await _projectService.GetProjectAsync(projectId, _companyId) 
+                ?? throw new BadHttpRequestException("Could not find the requested project.", 400);
+
+            // If not project manager for the project
+            // OR not an admin
+            if (!_userId.Equals((await _projectService.GetProjectManagerAsync(model.Id))?.Id)
+                && (!User.IsInRole(nameof(BTRoles.Admin))))
+            {
+                return Unauthorized();
+            }
 
             return View(model);
         }
@@ -415,6 +458,17 @@ namespace Chrysalis.Controllers
         public async Task<IActionResult> ConfirmUnarchive(int projectId)
         {
             string? swalMessage = string.Empty;
+
+            Project? project = await _projectService.GetProjectAsync(projectId, _companyId)
+                ?? throw new BadHttpRequestException("Could not find the requested project.", 400);
+
+            // If not project manager for the project
+            // OR not an admin
+            if (!_userId.Equals((await _projectService.GetProjectManagerAsync(project.Id))?.Id)
+                && (!User.IsInRole(nameof(BTRoles.Admin))))
+            {
+                return Unauthorized();
+            }
 
             bool success = await _projectService.UnarchiveProjectAsync(projectId, _companyId);
 
