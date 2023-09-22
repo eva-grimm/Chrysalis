@@ -94,6 +94,7 @@ namespace Chrysalis.Services
         {
             return await _context.Users
                 .Where(u => u.CompanyId == companyId)
+                .OrderBy(u => u.FirstName)
                 .ToListAsync();
         }
 

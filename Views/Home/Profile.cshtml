@@ -2,7 +2,9 @@
 @inject IProjectService _ProjectService
 @inject ITicketService _TicketService
 @inject IProjectService _ProjectService
-
+@{
+    ViewBag.Title = "User Profile";
+}
 <div class="row">
     <div class="col-12 col-md-6">
         <partial name="_UserPartial" model="@Model" />

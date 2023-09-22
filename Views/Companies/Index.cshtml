@@ -35,6 +35,35 @@
         </div>
     </div>
     <!--End header-->
+    @*Start Project Carousel*@
+    <div class="col-12 col-lg-6">
+        <div id="projectCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="10000">
+            <div class="carousel-inner">
+                @{
+                    List<Project> projects = Model.Projects.ToList();
+                    for (int i = 0; i < projects.Count(); i++)
+                    {
+                        if (i == 0)
+                        {
+                            <div class="carousel-item active">
+                                <partial name="_ProjectDescriptionPartial" model="projects[i]" />
+                                <partial name="_ProjectDetailsPartial" model="projects[i]" />
+                            </div>
+                           
+                        }
+                        else
+                        {
+                            <div class="carousel-item">
+                                <partial name="_ProjectDescriptionPartial" model="projects[i]" />
+                                <partial name="_ProjectDetailsPartial" model="projects[i]" />
+                            </div>
+                        }
+                    }
+                }
+            </div>
+        </div>
+    </div>
+    @*End Project Carousel*@
     <!--Start projects-->
     <div class="col-12">
         <div class="d-flex flex-column flex-md-row pb-3">
@@ -47,9 +76,6 @@
     <div class="col-12">
         <div class="d-flex flex-column flex-md-row pb-3">
             <h3 class="fw-bold text-center text-md-justify">Members</h3>
-            <div class="d-flex mx-auto">
-                <input id="cardFilter" type="text" class="form-control" placeholder="Filter" />
-            </div>
             @if (await _RoleService.IsUserInRoleAsync(currentUser, nameof(BTRoles.Admin)))
             {
                 <div class="ms-md-auto mt-3 mt-md-0 text-center">
@@ -62,7 +88,7 @@
         <div id="userCards" class="row">
             @foreach (BTUser? user in await _CompanyService.GetCompanyUsersAsync(Model.Id))
             {
-                <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                <div class="col-12 col-md-6 col-lg-4">
                     <partial name="_UserPartial" model="user" />
                 </div>
             }

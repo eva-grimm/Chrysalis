@@ -207,16 +207,16 @@
                 switch (colorDeterminer)
                 {
                     case 0:
-                        colorSelection = "#6259ca";
+                        colorSelection = "#B6B1E7";
                         break;
                     case 1:
-                        colorSelection = "#53caed";
+                        colorSelection = "#DAECAC";
                         break;
                     case 2:
                         colorSelection = "#01b8ff";
                         break;
                     case 3:
-                        colorSelection = "#f16d75";
+                        colorSelection = "F6A2A7";
                         break;
                     case 4:
                         colorSelection = "#29ccbb";
@@ -257,10 +257,10 @@
             IEnumerable<Ticket> urgentTickets = tickets.Where(t => t.TicketPriority == urgentPriority);
 
             <text>
-                    { label: 'Low', data: [[1, @lowTickets.Count()]], color: '#6259ca' },
-                    { label: 'Medium', data: [[1, @mediumTickets.Count()]], color: '#53caed' },
+                    { label: 'Low', data: [[1, @lowTickets.Count()]], color: '#B6B1E7' },
+                    { label: 'Medium', data: [[1, @mediumTickets.Count()]], color: '#DAECAC' },
                     { label: 'High', data: [[1, @highTickets.Count()]], color: '#01b8ff' },
-                    { label: 'Urgent', data: [[1, @urgentTickets.Count()]], color: '#f16d75' },
+                    { label: 'Urgent', data: [[1, @urgentTickets.Count()]], color: '#F6A2A7' },
             </text>
         }];
             $.plot('#ticketsPrioritiesPie', ticketPrioritiesData, {
@@ -283,7 +283,7 @@
             });
 
             function labelFormatter(label, series) {
-                return '<div style="font-size:8pt; text-align:center; padding:2px; color:white;">' + label + '<br/>' + Math.round(series.percent) + '%</div>';
+                return '<div style="font-size:8pt; text-align:center; padding:2px; color:black;">' + label + '<br/>' + Math.round(series.percent) + '%</div>';
             }
         });
     </script>

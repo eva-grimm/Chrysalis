@@ -2,15 +2,14 @@
     width: 200px;
 }
 
-.hover-card{
+.hover-card {
     transition: transform 0.3s ease;
 }
 
-.hover-card:hover {
-    transform: scale(1.05);
-    box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px,
-        rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
-}
+    .hover-card:hover {
+        transform: scale(1.05);
+        box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+    }
 
 /* #region Template CSS override */
 .card-body:has(.vtimeline) {
@@ -32,3 +31,28 @@
     overflow-y: auto;
 }
 /* #endregion Template CSS override */
+
+/* #region Landing Page CSS and Overrides */
+.hexagon i {
+    padding: 10px;
+}
+
+.hexagon img {
+    z-index: 1;
+    margin: auto;
+    width: 65px;
+    color: transparent;
+    background-clip: text;
+    -webkit-background-clip: text;
+    padding: 10px;
+    max-width: none;
+}
+
+.main-features-9 .hexagon {
+    background: var(--primary-bg-color);
+}
+
+.landing-page .features.main-features-9.card:hover {
+    border: 1px solid var(--primary-bg-color) !important;
+}
+/* #endregion Landing Page CSS and Overrides */
