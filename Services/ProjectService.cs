@@ -30,7 +30,7 @@ namespace Chrysalis.Services
 
         public async Task<bool> AddProjectAsync(Project? project)
         {
-            if (project == null) return true;
+            if (project == null) return false;
 
             try
             {
@@ -40,7 +40,7 @@ namespace Chrysalis.Services
             }
             catch (Exception)
             {
-                return false; ;
+                return false;
             }
         }
 

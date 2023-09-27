@@ -1,5 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Identity;
 @using Chrysalis.Enums
+@using System.Text;
 @model BTUser
 @inject UserManager<BTUser> _UserManager
 @inject ICompanyService _CompanyService
@@ -125,7 +126,7 @@
             </div>
         </div>
     </div>
-    <div class="col-12 col-xl-6 d-none d-md-block">
+    <div class="col-12 col-lg-6 d-none d-sm-block">
         <div class="card custom-card">
             <div class="card-body">
                 <div>
@@ -135,7 +136,7 @@
             </div>
         </div>
     </div>
-    <div class="col-12 col-xl-6 d-none d-md-block">
+    <div class="col-12 col-lg-6 d-none d-sm-block">
         <div class="card custom-card">
             <div class="card-body">
                 <div>
@@ -222,7 +223,21 @@
                         colorSelection = "#29ccbb";
                         break;
                 };
-                <text>{ label: '@projects[i].Name', data: [[1, @projects[i].Tickets.Count()]], color: '@colorSelection' }, </text>
+                StringBuilder sb = new();
+                if (projects[i]?.Name?.Length < 15)
+                {
+                    sb.Append(projects[i].Name);
+                }
+                else
+                {
+                    for(int j = 0; j < 14; j++)
+                    {
+                        sb.Append(projects[i]?.Name?[j]);
+                    }
+                    sb.Append("...");
+                }
+                string projectName = sb.ToString();
+                <text>{ label: '@projectName', data: [[1, @projects[i].Tickets.Count()]], color: '@colorSelection' }, </text>
             }
         }];
             $.plot('#ticketDistributionPie', ticketsByProjectData, {
