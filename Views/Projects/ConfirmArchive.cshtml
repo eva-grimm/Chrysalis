@@ -19,14 +19,16 @@
                     <small>Project Status</small>
                     <div class="progress">
                         @{
-                            double projectLengthInHours = Model.EndDate.Subtract(Model.StartDate).TotalHours;
-                            double hoursRemaining = Model.EndDate.Subtract(DateTime.Now).TotalHours;
-                            double hoursPast = projectLengthInHours - hoursRemaining;
-                            double percentProgress = Math.Ceiling(hoursPast / projectLengthInHours * 10);
-                            @if (percentProgress > 100) percentProgress = 100;
-                            <div class="progress-bar" role="progressbar" aria-valuenow="@percentProgress"
-                                 aria-valuemin="0" aria-valuemax="100" style="width:@percentProgress%;">
-                                <span class="progress-value">@percentProgress%</span>
+                            DateTime today = DateTime.Now;
+                            double percent = today >= Model.EndDate ? 100
+                            : today < Model.StartDate ? 0
+                            : Math.Round((today.Subtract(Model.StartDate)) / (Model.EndDate.Subtract(Model.StartDate)) * 100);
+                            percent = percent > 1 ? percent : 1;
+                            double width = percent >= 20 ? percent : 20;
+
+                            <div class="progress-bar" role="progressbar" aria-valuenow="@percent"
+                                 aria-valuemin="0" aria-valuemax="100" style="width:@width%;">
+                                <span class="progress-value">@percent%</span>
                             </div>
                         }
                     </div>
