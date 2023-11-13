@@ -3,6 +3,7 @@
 @inject UserManager<BTUser> _UserManager
 @inject IRoleService _RoleService
 @inject ICompanyService _CompanyService
+@inject IProjectService _ProjectService
 @{
     BTUser? currentUser = await _UserManager.GetUserAsync(User);
     bool userIsAdmin = await _RoleService.IsUserInRoleAsync(currentUser, nameof(BTRoles.Admin));
@@ -26,11 +27,14 @@
                 <tbody>
                     @foreach (Ticket? ticket in Model)
                     {
+                        BTUser? ticketPM = await _ProjectService.GetProjectManagerAsync(ticket.ProjectId);
+                        bool userIsPM = ticketPM?.Id.Equals(currentUser?.Id) ?? false;
                         <tr>
                             <td>@ticket.Title</td>
                             <td>@((await _CompanyService.GetCompanyUserByIdAsync(ticket.SubmitterUserId, ticket.Project?.CompanyId)).FullName)</td>
                             <td>
-                                @if (ticket.DeveloperUserId == null && userIsAdmin)
+                                
+                                @if (ticket.DeveloperUserId == null && (userIsAdmin || userIsPM))
                                 {
                                     <a class="badge bg-secondary" asp-action="AssignDeveloper"
                                        asp-controller="Tickets" asp-route-ticketId="@ticket.Id">
